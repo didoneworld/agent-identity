@@ -88,6 +88,28 @@ The image starts the FastAPI service and serves the admin console at `/`. To run
 docker run --rm agent-id-protocol:local /app/scripts/validate.sh
 ```
 
+For a full local product stack with Postgres:
+
+```bash
+docker compose up --build
+```
+
+The compose stack brings up:
+- `app` on `http://127.0.0.1:8000`
+- `db` on `postgresql://agentid:agentid@127.0.0.1:5432/agentid`
+
+If those host ports are already taken:
+
+```bash
+APP_PORT=8012 POSTGRES_PORT=5433 docker compose up --build
+```
+
+Environment template:
+
+```bash
+cp .env.example .env
+```
+
 ## Identity Foundation
 
 The protocol uses W3C DID as the identity foundation.
