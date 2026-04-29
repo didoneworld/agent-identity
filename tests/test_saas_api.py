@@ -58,7 +58,7 @@ def test_health_endpoint(tmp_path: Path):
     with _client(tmp_path) as client:
         response = client.get("/health")
         assert response.status_code == 200
-        assert response.json()["service"] == "agent-id-protocol-saas"
+        assert response.json()["service"] == "agent-identity-saas"
 
 
 def test_bootstrap_requires_single_tenant_initialization(tmp_path: Path):

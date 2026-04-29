@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/didoneworld/agent-id-protocol/releases/download/v0.2.0/agent-id-record.schema.json",
+  "$id": "https://github.com/didoneworld/agent-identity/releases/download/v0.2.0/agent-id-record.schema.json",
   "title": "Agent ID Record",
   "type": "object",
   "required": ["agent_id_protocol_version", "agent", "authorization", "governance", "bindings"],

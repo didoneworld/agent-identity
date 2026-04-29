@@ -69,7 +69,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
     @app.get("/health")
     def health() -> ServiceInfoResponse:
         return ServiceInfoResponse(
-            service="agent-id-protocol-saas",
+            service="agent-identity-saas",
             version="0.2.0",
             database_url_scheme=settings.database_url.split(":", 1)[0],
         )

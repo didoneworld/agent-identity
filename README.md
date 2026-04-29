@@ -97,8 +97,8 @@ curl -X POST http://127.0.0.1:8000/v1/bootstrap \
 The repository includes a runnable API image:
 
 ```bash
-docker build -t agent-id-protocol:local .
-docker run --rm -p 8000:8000 agent-id-protocol:local
+docker build -t agent-identity:local .
+docker run --rm -p 8000:8000 agent-identity:local
 ```
 
 Or pull a published image directly:
@@ -110,7 +110,7 @@ docker run --rm -p 8000:8000 autonomyx/agent-identity:latest
 The image starts the FastAPI service and serves the admin console at `/`. To run validation tests in the container instead:
 
 ```bash
-docker run --rm agent-id-protocol:local /app/scripts/validate.sh
+docker run --rm agent-identity:local /app/scripts/validate.sh
 ```
 
 For a full local product stack with Postgres:

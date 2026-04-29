@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-    image: agent-id-protocol:local
+    image: agent-identity:local
     ports:
       - "${APP_PORT:-8000}:8000"
     environment:
