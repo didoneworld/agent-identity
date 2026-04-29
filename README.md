@@ -16,6 +16,7 @@ This repository does not define agent messaging. It is intended to work alongsid
 ## Layout
 
 - `docs/agent-id-spec.md`: protocol draft
+- `docs/product-documentation.md`: product features, configuration, defaults, and API documentation
 - `docs/openid-alignment.md`: rationale for the authorization and governance additions
 - `docs/compatibility.md`: evolution and compatibility rules
 - `schemas/agent-id-record.yaml`: core record example
