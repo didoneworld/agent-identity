@@ -1,4 +1,4 @@
-agent_id_protocol_version: "0.1.0"
+agent_id_protocol_version: "0.2.0"
 agent:
   did: did:key:z6Mki3xVExampleLocalEphemeralAgentKey
   display_name: Local Lab Agent
@@ -11,6 +11,22 @@ agent:
   capabilities:
     - local-validation
     - dry-run-analysis
+authorization:
+  mode: autonomous
+  subject_context: first_party
+  delegation_proof_formats:
+    - verifiable_credentials
+  scope_reference: lab/local-validation
+  expires_at: null
+  max_delegation_depth: 0
+  attenuation_required: true
+  human_approval_required: false
+governance:
+  provisioning: manual
+  audit_endpoint: null
+  status_endpoint: null
+  deprovisioning_endpoint: null
+  identity_chain_preserved: false
 bindings:
   a2a:
     endpoint_url: null

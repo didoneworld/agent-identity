@@ -1,4 +1,4 @@
-agent_id_protocol_version: "0.1.0"
+agent_id_protocol_version: "0.2.0"
 agent:
   did: did:web:agents.didone.world:microcloud:migration:aws-discovery
   display_name: AWS Discovery Agent
@@ -11,6 +11,23 @@ agent:
   capabilities:
     - aws-inventory
     - migration-analysis
+authorization:
+  mode: delegated
+  subject_context: on_behalf_of_team
+  delegation_proof_formats:
+    - oauth_token_exchange
+    - oidc_identity_assertion
+  scope_reference: https://agents.didone.world/policies/aws-discovery
+  expires_at: 2026-12-31T23:59:59Z
+  max_delegation_depth: 1
+  attenuation_required: true
+  human_approval_required: true
+governance:
+  provisioning: scim
+  audit_endpoint: https://agents.didone.world/audit/aws-discovery
+  status_endpoint: https://agents.didone.world/status/aws-discovery
+  deprovisioning_endpoint: https://agents.didone.world/deprovision/aws-discovery
+  identity_chain_preserved: true
 bindings:
   a2a:
     endpoint_url: https://agents.didone.world/a2a/aws-discovery

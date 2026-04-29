@@ -1,4 +1,4 @@
-agent_id_protocol_version: "0.1.0"
+agent_id_protocol_version: "0.2.0"
 agent:
   did: did:<method>:<method-specific-id>
   display_name: <human-readable-name>
@@ -10,6 +10,22 @@ agent:
   trust_level: <internal|curated|external>
   capabilities:
     - <capability>
+authorization:
+  mode: <autonomous|delegated|hybrid>
+  subject_context: <first_party|on_behalf_of_user|on_behalf_of_team|multi_party>
+  delegation_proof_formats:
+    - <oauth_token_exchange|oidc_identity_assertion|verifiable_credentials|biscuits|macaroons>
+  scope_reference: <uri-or-policy-id>
+  expires_at: <rfc3339-timestamp-or-null>
+  max_delegation_depth: <integer>
+  attenuation_required: <true|false>
+  human_approval_required: <true|false>
+governance:
+  provisioning: <manual|scim|dynamic_client_registration|internal_iam>
+  audit_endpoint: <uri-or-null>
+  status_endpoint: <uri-or-null>
+  deprovisioning_endpoint: <uri-or-null>
+  identity_chain_preserved: <true|false>
 bindings:
   a2a:
     endpoint_url: null
