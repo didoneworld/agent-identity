@@ -1,6 +1,6 @@
 # Agent ID Protocol
 
-A standalone, publishable agent identity protocol built on W3C Decentralized Identifiers (DIDs).
+Open source vendor-agnostic agent identity and access management control plane based on OIDC and W3C DIDs.
 
 ## Scope
 
@@ -53,6 +53,11 @@ Current product slice:
 - audit logging for bootstrap, create/update, and deprovision actions
 - SQLite for local development and `DATABASE_URL` support for Postgres deployments
 
+## Published Images
+
+- Docker Hub: `autonomyx/agent-identity:latest`
+- GHCR: `ghcr.io/didoneworld/agent-id-protocol:latest`
+
 Run locally:
 
 ```bash
@@ -80,6 +85,12 @@ The repository includes a runnable API image:
 ```bash
 docker build -t agent-id-protocol:local .
 docker run --rm -p 8000:8000 agent-id-protocol:local
+```
+
+Or pull a published image directly:
+
+```bash
+docker run --rm -p 8000:8000 autonomyx/agent-identity:latest
 ```
 
 The image starts the FastAPI service and serves the admin console at `/`. To run validation tests in the container instead:
