@@ -23,3 +23,8 @@ This repository does not define agent messaging. It is intended to work alongsid
 ## Identity Foundation
 
 The protocol uses W3C DID as the identity foundation.
+
+## Recommended DID Methods
+
+- `did:web` for public organization-managed agent identities
+- `did:key` for local, ephemeral, or lightweight agent identities

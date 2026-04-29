@@ -37,6 +37,20 @@ agent:
     - <capability>
 ```
 
+## DID Method Guidance
+
+Choose the DID method based on deployment and trust model.
+
+- `did:web`: best default for organizations publishing agent identities over HTTPS with ordinary web infrastructure.
+- `did:key`: good for local, ephemeral, offline, or lightweight agents where simple self-certifying identity is enough.
+- `did:ion`, `did:cheqd`, or other method-specific options: only when the ecosystem or compliance model explicitly requires them.
+
+Selection rules:
+- Prefer `did:web` for public, organization-managed agent identities.
+- Prefer `did:key` for development, private lab, or temporary agent identities.
+- Do not require one DID method in the Agent ID protocol core.
+- Record method-specific operational assumptions outside the core identity schema.
+
 ## Binding Model
 
 Bindings are optional attachments to the DID-backed core record.
