@@ -19,6 +19,63 @@ The current implementation is a single FastAPI service with:
 - startup schema migration tracking
 - in-memory API rate limiting and request ID logging
 
+## Current State
+
+The product is now a working SaaS control-plane foundation with:
+- tenant bootstrap and organization isolation
+- API key authentication plus signed bearer sessions for OIDC and SAML ingress
+- tenant-scoped Agent ID registry and deprovision lifecycle
+- audit events and record-level FGA tuples
+- containerized local runtime and automated tests
+
+This is beyond a pure reference implementation, but it is still an MVP-to-foundation stage product rather than a fully hardened enterprise IAM platform.
+
+## Current Limitations
+
+- OIDC support is a trusted callback/session issuance flow. It does not yet perform live authorization-code exchange against an external IdP, fetch JWKS, or validate upstream ID tokens.
+- SAML support parses assertions and creates local sessions, but does not yet validate XML signatures, ingest IdP metadata automatically, or manage certificate rotation.
+- FGA is implemented as a local tuple store with basic `viewer`, `editor`, and `owner` relations on `agent_record`. It does not yet support group subjects, relation inheritance, model migration, or OpenFGA interoperability.
+- Session management is minimal: no refresh tokens, logout endpoint, revocation list, session browser UI, or anomaly detection.
+- The built-in UI does not yet expose IdP configuration, SSO flows, or FGA tuple management.
+- Platform hardening is incomplete: no SCIM, MFA, invitations, approval workflows, encrypted secret storage, Redis-backed rate limiting, or production metrics/tracing stack.
+
+## Future Plan
+
+### Phase 1: Identity hardening
+
+- Implement full OIDC authorization-code flow with upstream token validation
+- Add JWKS retrieval and cache management
+- Add SAML signature validation and metadata ingestion
+- Add logout, session revocation, and session administration endpoints
+
+### Phase 2: Authorization expansion
+
+- Add group-to-role and group-to-tuple mapping
+- Support richer FGA object types and relation inheritance
+- Define an authorization model version and compatibility policy
+- Add OpenFGA-compatible export or adapter paths
+
+### Phase 3: Enterprise controls
+
+- Add SCIM provisioning and deprovisioning
+- Add invitation flows and managed user directory concepts
+- Add audit export and retention controls
+- Add secret encryption and stronger key/session rotation workflows
+
+### Phase 4: Platform readiness
+
+- Move migration management to Alembic
+- Add Redis-backed rate limiting and background workers
+- Add structured metrics, tracing, and alerting hooks
+- Add deployment manifests for production environments
+
+### Phase 5: Product UX
+
+- Add admin screens for OIDC and SAML provider configuration
+- Add FGA tuple management and authorization inspection UI
+- Add session visibility and revocation UI
+- Add tenant settings, onboarding, and operator workflows
+
 ## Features
 
 ### Core platform features

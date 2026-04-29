@@ -70,6 +70,30 @@ Current product slice:
 - in-memory request rate limiting and request ID logging
 - SQLite for local development and `DATABASE_URL` support for Postgres deployments
 
+## Current State
+
+- working FastAPI control plane with tenant bootstrap, admin UI, API keys, SSO, SAML, and record-level FGA
+- persistent storage for organizations, keys, records, audit events, identity providers, sessions, and authorization tuples
+- Docker, Compose, container publishing, and passing automated tests
+- appropriate as a serious MVP and reference SaaS foundation, not yet a fully hardened enterprise identity platform
+
+## Current Limitations
+
+- OIDC is implemented as trusted callback-based session issuance, not full external authorization-code exchange and JWKS validation
+- SAML assertion ingestion exists, but certificate validation, signed metadata ingestion, and full SP hardening are not complete
+- FGA is internal and minimal; it is not OpenFGA-compatible and does not yet support groups, inheritance, or model versioning
+- admin UI does not yet manage identity providers, sessions, or FGA tuples
+- no SCIM, MFA, invitations, user directory, approval workflows, or policy administration UX
+- no Redis-backed rate limiting, background workers, secret encryption at rest, or production observability stack
+
+## Future Plan
+
+1. Harden identity flows with real OIDC code exchange, token validation, SAML signature validation, logout, and session revocation.
+2. Expand authorization with group mapping, policy templates, inheritance, and an OpenFGA-compatible model.
+3. Add enterprise lifecycle features including SCIM, approvals, audit export, key rotation workflows, and stronger secret handling.
+4. Improve platform operations with Alembic, Redis, workers, metrics, tracing, and deployment manifests.
+5. Build the missing admin UX for IdP configuration, tuple management, sessions, teams, and tenant settings.
+
 ## Published Images
 
 - Docker Hub: `autonomyx/agent-identity:latest`
