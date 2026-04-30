@@ -49,7 +49,9 @@ const state = {
   records: [],
   organizations: [],
   apiKeys: [],
-  auditEvents: []
+  auditEvents: [],
+  identityProviders: [],
+  fgaTuples: []
 };
 
 const els = {
@@ -66,6 +68,10 @@ const els = {
   organizationsList: document.getElementById("organizations-list"),
   apiKeysList: document.getElementById("api-keys-list"),
   auditList: document.getElementById("audit-list"),
+  idpList: document.getElementById("idp-list"),
+  idpEmpty: document.getElementById("idp-empty"),
+  fgaList: document.getElementById("fga-list"),
+  fgaEmpty: document.getElementById("fga-empty"),
   refreshAll: document.getElementById("refresh-all"),
   clearSession: document.getElementById("clear-session")
 };
@@ -155,6 +161,36 @@ function renderAudit() {
   });
 }
 
+
+function renderIdentityProviders() {
+  els.idpList.innerHTML = "";
+  els.idpEmpty.style.display = state.identityProviders.length ? "none" : "block";
+  state.identityProviders.forEach((item) => {
+    const node = document.createElement("div");
+    node.className = "mini-card";
+    node.innerHTML = `
+      <strong>${item.provider_type.toUpperCase()} · ${item.label}</strong>
+      <div class="audit-meta">Slug: ${item.organization_slug}</div>
+      <div class="audit-meta">Entity: ${item.issuer || item.entity_id || "n/a"}</div>
+    `;
+    els.idpList.appendChild(node);
+  });
+}
+
+function renderFgaTuples() {
+  els.fgaList.innerHTML = "";
+  els.fgaEmpty.style.display = state.fgaTuples.length ? "none" : "block";
+  state.fgaTuples.forEach((item) => {
+    const node = document.createElement("div");
+    node.className = "mini-card";
+    node.innerHTML = `
+      <strong>${item.subject}</strong>
+      <div class="audit-meta">${item.relation} @ ${item.resource}</div>
+    `;
+    els.fgaList.appendChild(node);
+  });
+}
+
 function renderRecords() {
   els.recordsList.innerHTML = "";
   els.recordsEmpty.style.display = state.records.length ? "none" : "block";
@@ -203,20 +239,26 @@ function renderRecords() {
 
 async function refreshAuthedData() {
   if (!state.apiKey) return;
-  const [organizations, apiKeys, records, auditEvents] = await Promise.all([
+  const [organizations, apiKeys, records, auditEvents, identityProviders, fgaTuples] = await Promise.all([
     api("/v1/organizations"),
     api("/v1/api-keys"),
     api("/v1/agent-records"),
-    api("/v1/audit-events")
+    api("/v1/audit-events"),
+    api("/v1/identity-providers"),
+    api("/v1/fga/tuples")
   ]);
   state.organizations = organizations;
   state.apiKeys = apiKeys;
   state.records = records;
   state.auditEvents = auditEvents;
+  state.identityProviders = identityProviders;
+  state.fgaTuples = fgaTuples;
   renderOrganizations();
   renderApiKeys();
   renderRecords();
   renderAudit();
+  renderIdentityProviders();
+  renderFgaTuples();
 }
 
 els.bootstrapForm.addEventListener("submit", async (event) => {
@@ -278,10 +320,14 @@ els.clearSession.addEventListener("click", () => {
   state.organizations = [];
   state.apiKeys = [];
   state.auditEvents = [];
+  state.identityProviders = [];
+  state.fgaTuples = [];
   renderOrganizations();
   renderApiKeys();
   renderRecords();
   renderAudit();
+  renderIdentityProviders();
+  renderFgaTuples();
 });
 
 updateSession();
