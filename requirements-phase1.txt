@@ -1,0 +1,22 @@
+# agent-did Phase 1 hardening — dependency additions
+# Merge these into your existing requirements.txt
+
+# OIDC: real authorization-code exchange + JWKS validation
+python-jose[cryptography]>=3.3.0
+httpx>=0.27.0
+
+# SAML: full SP with certificate validation + signed metadata
+python3-saml>=1.16.0
+lxml>=5.2.0
+
+# Key operations: JWKS PEM→JWK conversion
+cryptography>=42.0.0
+
+# FastAPI (already in project — confirm version)
+fastapi>=0.110.0
+pydantic>=2.6.0
+
+# Test dependencies
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+python-multipart>=0.0.9
