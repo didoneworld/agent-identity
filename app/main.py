@@ -39,6 +39,15 @@ from app.schemas import (
 )
 from app.services import AuthorizationError, BootstrapConflictError, ProtocolValidationError, SaaSService
 
+# Phase 1-3 routers
+from app.routers.discovery import router as discovery_router
+from app.routers.oidc_router import router as oidc_router
+from app.routers.saml_router import router as saml_router
+from app.routers.session_router import router as session_router
+from app.routers.scim_router import router as scim_router
+from app.ssf.emitter import ssf_router
+from app.approval.gate import approval_router
+
 
 def _record_response(record: AgentRecord) -> AgentRecordResponse:
     return AgentRecordResponse(
@@ -549,6 +558,18 @@ def create_app(
             object_id=payload.object_id,
         )
         return AuthorizationCheckResponse(allowed=allowed)
+
+    # ── Phase 1: hardened identity flows ──────────────────────────────────────
+    # Discovery must be at root (no prefix) — OIDC RPs hit /.well-known/*
+    app.include_router(discovery_router, tags=["Discovery"])
+    app.include_router(oidc_router,    prefix="/v1/sso/oidc", tags=["SSO – OIDC"])
+    app.include_router(saml_router,    prefix="/v1/sso/saml", tags=["SSO – SAML"])
+    app.include_router(session_router, prefix="/v1",          tags=["Sessions"])
+
+    # ── Phase 2: SCIM lifecycle + SSF + approvals ──────────────────────────
+    app.include_router(scim_router,    prefix="/v1/scim/v2",  tags=["SCIM"])
+    app.include_router(ssf_router,     prefix="/v1/ssf",      tags=["SSF"])
+    app.include_router(approval_router,prefix="/v1/approvals",tags=["Approvals"])
 
     return app
 
