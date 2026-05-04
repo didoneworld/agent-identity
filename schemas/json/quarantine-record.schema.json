@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "quarantine_id",
+    "agent_id",
+    "reason",
+    "status"
+  ],
+  "properties": {
+    "quarantine_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "finding_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "released_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "active",
+        "released",
+        "deprovisioned"
+      ]
+    }
+  }
+}

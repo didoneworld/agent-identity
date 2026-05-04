@@ -1,0 +1,21 @@
+{
+  "policy_id": "policy-production-agent",
+  "name": "Production Agent DID hardening policy",
+  "max_agent_lifetime_days": 180,
+  "inactivity_suspend_days": 30,
+  "credential_rotation_days": 45,
+  "renewal_window_days": 45,
+  "approval_required": true,
+  "two_person_approval_required": true,
+  "sponsor_required": true,
+  "owner_required": true,
+  "production_hardening_required": true,
+  "auto_deprovision_on_sponsor_removal": true,
+  "auto_suspend_on_policy_violation": true,
+  "auto_quarantine_on_critical_finding": true,
+  "rules": [
+    { "if": "agent.environment == 'production'", "then": "require_manual_approval" },
+    { "if": "permission.risk_level in ['high','critical']", "then": "require_two_person_approval" }
+  ],
+  "compatibility_profiles": ["microsoft_entra_agent_id_optional_alignment"]
+}

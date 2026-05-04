@@ -1,0 +1,12 @@
+{
+  "agent_id": "agent-123",
+  "started_at": "2026-05-04T00:00:00Z",
+  "completed_at": "2026-05-04T00:01:30Z",
+  "requested_by": "secops@example.com",
+  "status": "completed",
+  "completed_steps": ["mark_deprovisioning", "revoke_tokens", "revoke_credentials", "revoke_permissions", "remove_fga_tuples", "notify_webhooks", "disable_agent_record", "tombstone_public_metadata", "archive_audit_records", "mark_deprovisioned"],
+  "failed_steps": [],
+  "retryable_failures": [],
+  "irreversible_steps": ["revoke_tokens", "revoke_credentials", "tombstone_public_metadata"],
+  "audit_event_ids": ["evt-001", "evt-002"]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "permission_id",
+    "source",
+    "resource_app_id",
+    "status"
+  ],
+  "properties": {
+    "permission_id": {
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "direct",
+        "inherited",
+        "delegated",
+        "consented"
+      ]
+    },
+    "resource_app_id": {
+      "type": "string"
+    },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "app_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "granted_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "approved_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "granted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "revoked_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "requested",
+        "approved",
+        "denied",
+        "granted",
+        "revoked",
+        "expired",
+        "inherited",
+        "overridden"
+      ]
+    },
+    "justification": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "risk_level": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    }
+  }
+}

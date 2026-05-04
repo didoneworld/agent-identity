@@ -174,6 +174,7 @@ class AgentRecordResponse(BaseModel):
     did: str
     display_name: str
     status: str
+    lifecycle_state: str = "active"
     environment: str
     protocol_version: str
     record: dict[str, Any]
@@ -215,3 +216,65 @@ class ServiceInfoResponse(BaseModel):
     schema_revision: str
     rate_limit_requests: int
     rate_limit_window_seconds: int
+
+class LifecycleRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    reason: str | None = Field(default=None, max_length=1000)
+    ticket_id: str | None = Field(default=None, max_length=255)
+    requested_by: str | None = Field(default=None, max_length=255)
+    approved_by: str | None = Field(default=None, max_length=255)
+    effective_at: datetime | None = None
+    expires_at: datetime | None = None
+    force: bool = False
+    dry_run: bool = False
+    idempotency_key: str | None = Field(default=None, max_length=255)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class LifecycleValidationReportResponse(BaseModel):
+    passed: bool
+    failed: list[str]
+    warnings: list[str]
+    blocking_issues: list[str]
+    recommended_actions: list[str]
+
+
+class LifecycleTransitionResponse(BaseModel):
+    subject_type: str
+    subject_id: str
+    previous_state: str | None
+    new_state: str | None
+    dry_run: bool = False
+    validation_report: LifecycleValidationReportResponse | None = None
+    audit_event_id: str | None = None
+    deprovisioning_report: dict[str, Any] | None = None
+
+
+class LifecycleAuditEventResponse(BaseModel):
+    event_id: str
+    event_type: str
+    subject_type: str
+    subject_id: str
+    previous_state: str | None
+    new_state: str | None
+    actor_type: str
+    actor_id: str
+    requested_by: str | None
+    approved_by: str | None
+    reason: str | None
+    ticket_id: str | None
+    policy_id: str | None
+    correlation_id: str | None
+    idempotency_key: str | None
+    timestamp: datetime
+    evidence_hash: str
+    metadata: dict[str, Any]
+
+
+class BlueprintLifecycleResponse(BaseModel):
+    id: str
+    organization_id: str
+    lifecycle_state: str
+    metadata: dict[str, Any]
+    updated_at: datetime

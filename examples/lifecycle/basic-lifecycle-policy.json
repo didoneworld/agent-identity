@@ -1,0 +1,20 @@
+{
+  "policy_id": "policy-basic-lifecycle",
+  "name": "Basic Agent DID lifecycle policy",
+  "max_agent_lifetime_days": 365,
+  "inactivity_suspend_days": 90,
+  "credential_rotation_days": 90,
+  "renewal_window_days": 30,
+  "approval_required": false,
+  "two_person_approval_required": false,
+  "sponsor_required": true,
+  "owner_required": true,
+  "production_hardening_required": false,
+  "auto_deprovision_on_sponsor_removal": false,
+  "auto_suspend_on_policy_violation": true,
+  "auto_quarantine_on_critical_finding": true,
+  "rules": [
+    { "if": "agent.inactive_days >= policy.inactivity_suspend_days", "then": "suspend" },
+    { "if": "credential.age_days >= policy.credential_rotation_days", "then": "rotate_credentials" }
+  ]
+}

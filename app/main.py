@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import json
 from time import perf_counter
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db, init_database
-from app.db_models import AgentRecord
+from app.db_models import AgentRecord, AgentIdentityBlueprint
 from app.migrations import migrate_database
 from app.runtime import InMemoryRateLimiter, build_request_context, log_request, rate_limit_response
 from app.schemas import (
@@ -27,6 +29,12 @@ from app.schemas import (
     AuditEventResponse,
     BootstrapResponse,
     DeprovisionRequest,
+
+    BlueprintLifecycleResponse,
+    LifecycleAuditEventResponse,
+    LifecycleRequest,
+    LifecycleTransitionResponse,
+    LifecycleValidationReportResponse,
     IdentityProviderConfigRequest,
     IdentityProviderConfigResponse,
     OidcCallbackRequest,
@@ -46,6 +54,7 @@ from app.routers.saml_router import router as saml_router
 from app.routers.session_router import router as session_router
 from app.routers.scim_router import router as scim_router
 from app.ssf.emitter import ssf_router
+from app.lifecycle import BLUEPRINT_ACTION_TARGETS, BLUEPRINT_TRANSITIONS, LifecycleRequestData, agent_lifecycle_state, set_agent_lifecycle_state, validate_transition, validation_report_for_record
 from app.approval.gate import approval_router
 
 
@@ -56,6 +65,7 @@ def _record_response(record: AgentRecord) -> AgentRecordResponse:
         did=record.did,
         display_name=record.display_name,
         status=record.status,
+        lifecycle_state=agent_lifecycle_state(record),
         environment=record.environment,
         protocol_version=record.protocol_version,
         record=record.record_json,
@@ -471,10 +481,10 @@ def create_app(
             for event in events
         ]
 
-    @app.post("/v1/agent-records/{record_id}/deprovision", response_model=AgentRecordResponse)
+    @app.post("/v1/agent-records/{record_id}/deprovision")
     def deprovision_agent_record(
         record_id: str,
-        payload: DeprovisionRequest,
+        payload: LifecycleRequest,
         db: Annotated[Session, Depends(get_db)],
         auth=Depends(require_role("admin", "writer", "reader")),
     ):
@@ -485,14 +495,166 @@ def create_app(
             service.ensure_record_permission(db, auth, current, "deprovision")
         except AuthorizationError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
+        req = LifecycleRequestData(**payload.model_dump())
+        previous = agent_lifecycle_state(current)
+        report = service.build_deprovisioning_report(record_id, req.requested_by or auth.actor_label, req.dry_run)
+        if req.dry_run:
+            response = _record_response(current).model_dump(mode="json")
+            response.update({"subject_type": "agent", "subject_id": record_id, "previous_state": previous, "new_state": "deprovisioning", "dry_run": True, "deprovisioning_report": report})
+            return response
         record = service.deprovision_record(
             db,
             auth.organization_id,
             auth.actor_label,
             record_id=record_id,
-            reason=payload.reason,
+            reason=payload.reason or "deprovision requested",
         )
-        return _record_response(record)
+        set_agent_lifecycle_state(record, "deprovisioned")
+        event = service._lifecycle_audit(db, organization_id=auth.organization_id, event_type="agent.deprovisioned", subject_type="agent", subject_id=record.id, actor_label=auth.actor_label, previous_state=previous, new_state="deprovisioned", request=req, metadata={"deprovisioning_report": report}, agent_record_id=record.id)
+        db.commit(); db.refresh(record)
+        response = _record_response(record).model_dump(mode="json")
+        response.update({"subject_type": "agent", "subject_id": record_id, "previous_state": previous, "new_state": "deprovisioned", "dry_run": False, "audit_event_id": event.id, "deprovisioning_report": report})
+        return response
+
+    def _lifecycle_request(payload: LifecycleRequest) -> LifecycleRequestData:
+        data = payload.model_dump()
+        return LifecycleRequestData(**data)
+
+    def _transition_response(subject_type: str, subject_id: str, result: dict) -> LifecycleTransitionResponse:
+        return LifecycleTransitionResponse(
+            subject_type=subject_type,
+            subject_id=subject_id,
+            previous_state=result.get("previous_state"),
+            new_state=result.get("new_state"),
+            dry_run=result.get("dry_run", False),
+            validation_report=result.get("validation_report"),
+            audit_event_id=result.get("audit_event_id"),
+            deprovisioning_report=result.get("deprovisioning_report"),
+        )
+
+    @app.post("/v1/agent-records/{record_id}/validate", response_model=LifecycleValidationReportResponse)
+    def validate_agent_lifecycle(
+        record_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        auth=Depends(require_role("admin", "writer", "reader")),
+    ):
+        record = service.get_record_by_id(db, auth.organization_id, record_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="agent record not found")
+        return validation_report_for_record(record)
+
+    @app.post("/v1/agent-records/{record_id}/submit-review", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/approve", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/activate", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/suspend", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/resume", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/quarantine", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/renew", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/rotate-credentials", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/agent-records/{record_id}/archive", response_model=LifecycleTransitionResponse)
+    def transition_agent_record_lifecycle(
+        record_id: str,
+        payload: LifecycleRequest,
+        request: Request,
+        db: Annotated[Session, Depends(get_db)],
+        auth=Depends(require_role("admin", "writer")),
+    ):
+        action = request.url.path.rstrip("/").rsplit("/", 1)[-1]
+        try:
+            _record, result = service.transition_agent_lifecycle(db, auth.organization_id, auth.actor_label, record_id, action, _lifecycle_request(payload))
+        except KeyError:
+            raise HTTPException(status_code=404, detail="agent record not found")
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except PermissionError as exc:
+            try:
+                detail = json.loads(str(exc))
+            except Exception:
+                detail = str(exc)
+            raise HTTPException(status_code=422, detail=detail) from exc
+        return _transition_response("agent", record_id, result)
+
+    @app.delete("/v1/agent-records/{record_id}", response_model=LifecycleTransitionResponse)
+    def delete_agent_record_lifecycle(
+        record_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        auth=Depends(require_role("admin", "writer")),
+    ):
+        try:
+            _record, result = service.transition_agent_lifecycle(db, auth.organization_id, auth.actor_label, record_id, "delete", LifecycleRequestData(reason="delete requested", force=True))
+        except KeyError:
+            raise HTTPException(status_code=404, detail="agent record not found")
+        return _transition_response("agent", record_id, result)
+
+    def _blueprint_response(blueprint: AgentIdentityBlueprint) -> BlueprintLifecycleResponse:
+        return BlueprintLifecycleResponse(id=blueprint.id, organization_id=blueprint.organization_id, lifecycle_state=blueprint.lifecycle_state, metadata=blueprint.metadata_json, updated_at=blueprint.updated_at)
+
+    def _get_or_create_blueprint(db: Session, organization_id: str, blueprint_id: str) -> AgentIdentityBlueprint:
+        blueprint = db.scalar(select(AgentIdentityBlueprint).where(AgentIdentityBlueprint.organization_id == organization_id, AgentIdentityBlueprint.id == blueprint_id))
+        if blueprint is None:
+            blueprint = AgentIdentityBlueprint(id=blueprint_id, organization_id=organization_id, metadata_json={"compatibility_profiles": ["microsoft_entra_agent_id_optional_alignment"]})
+            db.add(blueprint); db.flush()
+        return blueprint
+
+    @app.get("/v1/blueprints/{blueprint_id}", response_model=BlueprintLifecycleResponse)
+    def get_blueprint(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        return _blueprint_response(_get_or_create_blueprint(db, auth.organization_id, blueprint_id))
+
+    @app.post("/v1/blueprints/{blueprint_id}/activate", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/blueprints/{blueprint_id}/disable", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/blueprints/{blueprint_id}/enable", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/blueprints/{blueprint_id}/deprecate", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/blueprints/{blueprint_id}/quarantine", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/blueprints/{blueprint_id}/deprovision-children", response_model=LifecycleTransitionResponse)
+    @app.post("/v1/blueprints/{blueprint_id}/archive", response_model=LifecycleTransitionResponse)
+    def transition_blueprint_lifecycle(blueprint_id: str, payload: LifecycleRequest, request: Request, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        action = request.url.path.rstrip("/").rsplit("/", 1)[-1]
+        req = _lifecycle_request(payload)
+        blueprint = _get_or_create_blueprint(db, auth.organization_id, blueprint_id)
+        previous = blueprint.lifecycle_state
+        target = BLUEPRINT_ACTION_TARGETS[action]
+        try:
+            validate_transition("blueprint", previous, target, req.force)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if req.dry_run:
+            return _transition_response("blueprint", blueprint_id, {"dry_run": True, "previous_state": previous, "new_state": target})
+        blueprint.lifecycle_state = target; blueprint.updated_at = service._lifecycle_audit.__globals__["utc_now"]()
+        event = service._lifecycle_audit(db, organization_id=auth.organization_id, event_type=f"blueprint.{target}", subject_type="blueprint", subject_id=blueprint.id, actor_label=auth.actor_label, previous_state=previous, new_state=target, request=req, metadata={"action": action})
+        if action in {"disable", "deprovision-children"}:
+            child_target = "suspended" if action == "disable" else "deprovisioning"
+            for record in service.list_records(db, auth.organization_id):
+                if (record.record_json or {}).get("blueprint_id") == blueprint.id or ((record.record_json or {}).get("lifecycle") or {}).get("blueprint_id") == blueprint.id or ((((record.record_json or {}).get("extensions") or {}).get("lifecycle") or {}).get("blueprint_id") == blueprint.id):
+                    old = agent_lifecycle_state(record)
+                    if req.force or child_target in {"suspended", "deprovisioning"}:
+                        set_agent_lifecycle_state(record, child_target)
+                        service._lifecycle_audit(db, organization_id=auth.organization_id, event_type=f"agent.{child_target}", subject_type="agent", subject_id=record.id, actor_label=auth.actor_label, previous_state=old, new_state=child_target, request=req, metadata={"cascade_from_blueprint": blueprint.id}, agent_record_id=record.id)
+        db.commit()
+        return _transition_response("blueprint", blueprint_id, {"previous_state": previous, "new_state": target, "audit_event_id": event.id})
+
+    @app.delete("/v1/blueprints/{blueprint_id}", response_model=LifecycleTransitionResponse)
+    def delete_blueprint_lifecycle(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        blueprint = _get_or_create_blueprint(db, auth.organization_id, blueprint_id)
+        previous = blueprint.lifecycle_state
+        blueprint.lifecycle_state = "deleted"; blueprint.updated_at = service._lifecycle_audit.__globals__["utc_now"]()
+        event = service._lifecycle_audit(db, organization_id=auth.organization_id, event_type="blueprint.deleted", subject_type="blueprint", subject_id=blueprint.id, actor_label=auth.actor_label, previous_state=previous, new_state="deleted", request=LifecycleRequestData(reason="delete requested", force=True), metadata={})
+        db.commit()
+        return _transition_response("blueprint", blueprint_id, {"previous_state": previous, "new_state": "deleted", "audit_event_id": event.id})
+
+    @app.get("/v1/audit/lifecycle-events", response_model=list[LifecycleAuditEventResponse])
+    def list_lifecycle_events(db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader")), subject_type: str | None = None, subject_id: str | None = None):
+        events = service.list_lifecycle_audit_events(db, auth.organization_id, subject_type, subject_id)
+        return [LifecycleAuditEventResponse(event_id=e.id, event_type=e.event_type, subject_type=e.subject_type, subject_id=e.subject_id, previous_state=e.previous_state, new_state=e.new_state, actor_type=e.actor_type, actor_id=e.actor_id, requested_by=e.requested_by, approved_by=e.approved_by, reason=e.reason, ticket_id=e.ticket_id, policy_id=e.policy_id, correlation_id=e.correlation_id, idempotency_key=e.idempotency_key, timestamp=e.created_at, evidence_hash=e.evidence_hash, metadata=e.metadata_json) for e in events]
+
+    @app.get("/v1/agent-records/{record_id}/lifecycle-events", response_model=list[LifecycleAuditEventResponse])
+    def list_agent_lifecycle_events(record_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        events = service.list_lifecycle_audit_events(db, auth.organization_id, "agent", record_id)
+        return [LifecycleAuditEventResponse(event_id=e.id, event_type=e.event_type, subject_type=e.subject_type, subject_id=e.subject_id, previous_state=e.previous_state, new_state=e.new_state, actor_type=e.actor_type, actor_id=e.actor_id, requested_by=e.requested_by, approved_by=e.approved_by, reason=e.reason, ticket_id=e.ticket_id, policy_id=e.policy_id, correlation_id=e.correlation_id, idempotency_key=e.idempotency_key, timestamp=e.created_at, evidence_hash=e.evidence_hash, metadata=e.metadata_json) for e in events]
+
+    @app.get("/v1/blueprints/{blueprint_id}/lifecycle-events", response_model=list[LifecycleAuditEventResponse])
+    def list_blueprint_lifecycle_events(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        events = service.list_lifecycle_audit_events(db, auth.organization_id, "blueprint", blueprint_id)
+        return [LifecycleAuditEventResponse(event_id=e.id, event_type=e.event_type, subject_type=e.subject_type, subject_id=e.subject_id, previous_state=e.previous_state, new_state=e.new_state, actor_type=e.actor_type, actor_id=e.actor_id, requested_by=e.requested_by, approved_by=e.approved_by, reason=e.reason, ticket_id=e.ticket_id, policy_id=e.policy_id, correlation_id=e.correlation_id, idempotency_key=e.idempotency_key, timestamp=e.created_at, evidence_hash=e.evidence_hash, metadata=e.metadata_json) for e in events]
 
     @app.get("/v1/fga/tuples", response_model=list[AuthorizationTupleResponse])
     def list_fga_tuples(

@@ -154,3 +154,82 @@ class AuthorizationTuple(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     organization: Mapped[Organization] = relationship(back_populates="authorization_tuples")
+
+
+class AgentIdentityBlueprint(Base):
+    __tablename__ = "agent_identity_blueprints"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Agent Identity Blueprint")
+    lifecycle_state: Mapped[str] = mapped_column(String(32), default="draft", nullable=False, index=True)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class LifecycleAuditEvent(Base):
+    __tablename__ = "lifecycle_audit_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    agent_record_id: Mapped[str | None] = mapped_column(ForeignKey("agent_records.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    subject_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    subject_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    previous_state: Mapped[str | None] = mapped_column(String(32))
+    new_state: Mapped[str | None] = mapped_column(String(32))
+    actor_type: Mapped[str] = mapped_column(String(32), default="user", nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    requested_by: Mapped[str | None] = mapped_column(String(255))
+    approved_by: Mapped[str | None] = mapped_column(String(255))
+    reason: Mapped[str | None] = mapped_column(Text)
+    ticket_id: Mapped[str | None] = mapped_column(String(255))
+    policy_id: Mapped[str | None] = mapped_column(String(255))
+    correlation_id: Mapped[str | None] = mapped_column(String(255), index=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), index=True)
+    evidence_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class LifecycleJsonRecord(Base):
+    __tablename__ = "lifecycle_json_records"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    record_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    subject_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    subject_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(64), nullable=False, default="active", index=True)
+    payload_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+# Concrete lifecycle tables required by the lifecycle management contract. They intentionally
+# use a common JSON payload shape so deployments can remain vendor-neutral and DID-first while
+# evolving metadata without locking to one provider schema.
+def _json_table(name: str):
+    return type(
+        name,
+        (LifecycleJsonRecord,),
+        {"__tablename__": name, "__mapper_args__": {"concrete": True}, "id": mapped_column(String(36), primary_key=True, default=lambda: str(uuid4())), "organization_id": mapped_column(ForeignKey("organizations.id"), nullable=False, index=True), "record_type": mapped_column(String(64), nullable=False, index=True), "subject_type": mapped_column(String(32), nullable=False, index=True), "subject_id": mapped_column(String(255), nullable=False, index=True), "status": mapped_column(String(64), nullable=False, default="active", index=True), "payload_json": mapped_column(JSON, default=dict, nullable=False), "created_at": mapped_column(DateTime(timezone=True), default=utc_now, nullable=False), "updated_at": mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)},
+    )
+
+LifecycleState = _json_table("lifecycle_states")
+LifecycleTransition = _json_table("lifecycle_transitions")
+LifecyclePolicy = _json_table("lifecycle_policies")
+LifecyclePolicyBinding = _json_table("lifecycle_policy_bindings")
+LifecycleValidationReport = _json_table("lifecycle_validation_reports")
+CredentialLifecycleEvent = _json_table("credential_lifecycle_events")
+PermissionLifecycleEvent = _json_table("permission_lifecycle_events")
+SponsorLifecycleEvent = _json_table("sponsor_lifecycle_events")
+OwnerLifecycleEvent = _json_table("owner_lifecycle_events")
+DeprovisioningJob = _json_table("deprovisioning_jobs")
+DeprovisioningStep = _json_table("deprovisioning_steps")
+RenewalRequest = _json_table("renewal_requests")
+RiskFinding = _json_table("risk_findings")
+QuarantineRecord = _json_table("quarantine_records")
+LifecycleWebhookSubscription = _json_table("lifecycle_webhook_subscriptions")
+LifecycleWebhookDelivery = _json_table("lifecycle_webhook_deliveries")
