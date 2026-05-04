@@ -240,3 +240,57 @@ QuarantineRecord = _json_table("quarantine_records")
 LifecycleWebhookSubscription = _json_table("lifecycle_webhook_subscriptions")
 LifecycleWebhookDelivery = _json_table("lifecycle_webhook_deliveries")
 
+
+
+# Additional models expected by services.py but missing after merge
+
+
+class AgentDirectGrant(Base):
+    __tablename__ = "agent_direct_grants"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    agent_record_id: Mapped[str] = mapped_column(ForeignKey("agent_records.id"), nullable=False, index=True)
+    grant_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    principal_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    principal_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    scopes_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BlueprintConsentGrant(Base):
+    __tablename__ = "blueprint_consent_grants"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    consent_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    principal_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    scopes_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    granted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BlueprintOwner(Base):
+    __tablename__ = "blueprint_owners"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    owner_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    owner_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class BlueprintSponsor(Base):
+    __tablename__ = "blueprint_sponsors"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    sponsor_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    sponsor_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
