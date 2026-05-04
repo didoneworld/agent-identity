@@ -163,11 +163,27 @@ class AuthorizationTuple(Base):
 
 class AgentIdentityBlueprint(Base):
     __tablename__ = "agent_identity_blueprints"
-
+    __table_args__ = (UniqueConstraint("organization_id", "blueprint_id", name="uq_org_blueprint_id"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
-    display_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Agent Identity Blueprint")
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    publisher: Mapped[str] = mapped_column(String(255), nullable=False)
+    verified_publisher: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    publisher_domain: Mapped[str | None] = mapped_column(String(255))
+    sign_in_audience: Mapped[str] = mapped_column(String(64), default="single_tenant", nullable=False)
+    identifier_uris_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    app_roles_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    optional_claims_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    group_membership_claims_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    token_encryption_key_id: Mapped[str | None] = mapped_column(String(255))
+    certification_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    info_urls_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    tags_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="active", nullable=False)
+    extension_fields_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     lifecycle_state: Mapped[str] = mapped_column(String(32), default="draft", nullable=False, index=True)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
