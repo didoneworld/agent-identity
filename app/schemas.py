@@ -402,3 +402,13 @@ class BlueprintPolicyActionResponse(BaseModel):
     blueprint_id: str
     success: bool
     message: str
+
+
+class EffectivePermissionsResponse(BaseModel):
+    blueprint_id: str
+    permission_id: str
+    display_name: str
+    scope: str
+    inheritable: bool
+    owner_id: str | None
+    sponsor_id: str | None
