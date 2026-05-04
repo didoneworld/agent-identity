@@ -1,0 +1,30 @@
+{
+  "blueprint_id": "bp-knowledge-agent",
+  "display_name": "Knowledge Agent Blueprint",
+  "description": "Blueprint with reviewable required resource access and limited inheritable permissions.",
+  "publisher": "Didone World",
+  "verified_publisher": true,
+  "publisher_domain": "didone.world",
+  "sign_in_audience": "multi_tenant",
+  "identifier_uris": ["api://didone.world/agents/knowledge"],
+  "app_roles": [{"value": "Knowledge.Read.All", "description": "Read approved knowledge sources"}],
+  "optional_claims": {"access_token": ["did", "blueprint_id"]},
+  "group_membership_claims": [],
+  "token_encryption_key_id": "did:web:didone.world#blueprint-token-key-1",
+  "certification": {"level": "internal-reviewed"},
+  "info_urls": {"marketing": "https://didone.world/knowledge", "support": "https://didone.world/support", "terms_of_service": "https://didone.world/terms", "privacy": "https://didone.world/privacy"},
+  "tags": ["knowledge", "obo", "did"],
+  "status": "active",
+  "permissions": {
+    "required_resource_access": [{"resource_app_id": "api://content-platform", "scopes": ["content.read"], "app_roles": ["Content.Reader"]}],
+    "inheritable_permissions": [{"resource_app_id": "api://content-platform", "scopes": ["content.read"], "app_roles": []}],
+    "consent_grants": [{"resource_app_id": "api://content-platform", "scopes": ["content.read"], "app_roles": []}],
+    "direct_agent_grants": [],
+    "denied_permissions": []
+  },
+  "owners": ["user:knowledge-owner"],
+  "sponsors": ["user:knowledge-sponsor"],
+  "extension_fields": {"non_microsoft_idp": {"issuer": "https://issuer.example"}},
+  "created_at": "2026-05-04T00:00:00Z",
+  "updated_at": "2026-05-04T00:00:00Z"
+}

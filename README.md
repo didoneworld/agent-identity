@@ -149,6 +149,17 @@ Create a local environment file from the template:
 cp .env.example .env
 ```
 
+
+## Agent Identity Blueprint Alignment
+
+Agent DID supports a vendor-neutral **Agent Identity Blueprint** model inspired by Microsoft Entra Agent ID blueprints. A blueprint is a reusable template and policy container for many DID-backed child agent identities. It captures publisher metadata, sign-in audience, identifier URIs, app roles, optional claims, credential policy, required resource access, inheritable permissions, owners, sponsors, and lifecycle policy actions while preserving W3C DID as the identity foundation.
+
+Blueprint-backed records remain compatible with A2A, ACP, and ANP because the child Agent ID record still owns protocol bindings and `agent.did`. Microsoft Entra compatibility is provided as an alignment profile rather than a hard dependency; non-Microsoft providers can use `extension_fields` for local issuer, federation, principal, and managed identity metadata.
+
+Existing Agent ID records are backward compatible. `blueprint_id` is optional, so standalone records continue to validate. To migrate, create a blueprint for shared metadata and permissions, then upsert each child Agent ID record with `blueprint_id` at the top level or in `extensions.blueprint_id`; the control plane records inherited metadata in `extensions.blueprint.inherited_metadata` unless the child overrides it.
+
+Blueprint APIs include CRUD routes, child record creation and inventory, effective permission preview, credential creation/rotation/deletion, and policy actions for disable, enable, quarantine, deprovision, and export. See `docs/entra-blueprint-alignment.md` for token-flow alignment and migration guidance.
+
 ## Core API surface
 
 Unauthenticated:
@@ -166,6 +177,22 @@ Authenticated with API key or bearer session:
 - `GET /v1/organizations`
 - `GET /v1/identity-providers`
 - `GET /v1/agent-records`
+- `POST /v1/blueprints`
+- `GET /v1/blueprints`
+- `GET /v1/blueprints/{blueprint_id}`
+- `PATCH /v1/blueprints/{blueprint_id}`
+- `DELETE /v1/blueprints/{blueprint_id}`
+- `POST /v1/blueprints/{blueprint_id}/disable`
+- `POST /v1/blueprints/{blueprint_id}/enable`
+- `GET /v1/blueprints/{blueprint_id}/agent-records`
+- `POST /v1/blueprints/{blueprint_id}/agent-records`
+- `GET /v1/blueprints/{blueprint_id}/permissions/effective`
+- `POST /v1/blueprints/{blueprint_id}/permissions/revoke`
+- `POST /v1/blueprints/{blueprint_id}/principals`
+- `DELETE /v1/blueprints/{blueprint_id}/principals/{principal_id}`
+- `POST /v1/blueprints/{blueprint_id}/credentials`
+- `POST /v1/blueprints/{blueprint_id}/credentials/{credential_id}/rotate`
+- `DELETE /v1/blueprints/{blueprint_id}/credentials/{credential_id}`
 - `POST /v1/agent-records`
 - `GET /v1/agent-records/{record_id}`
 - `GET /v1/agent-records/by-did/{did}`

@@ -217,6 +217,7 @@ class ServiceInfoResponse(BaseModel):
     rate_limit_requests: int
     rate_limit_window_seconds: int
 
+
 class LifecycleRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -278,3 +279,4 @@ class BlueprintLifecycleResponse(BaseModel):
     lifecycle_state: str
     metadata: dict[str, Any]
     updated_at: datetime
+

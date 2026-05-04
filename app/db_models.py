@@ -35,6 +35,9 @@ class Organization(Base):
     authorization_tuples: Mapped[list["AuthorizationTuple"]] = relationship(
         back_populates="organization", cascade="all, delete-orphan"
     )
+    blueprints: Mapped[list["AgentIdentityBlueprint"]] = relationship(
+        back_populates="organization", cascade="all, delete-orphan"
+    )
 
 
 class ApiKey(Base):
@@ -61,6 +64,7 @@ class AgentRecord(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str | None] = mapped_column(ForeignKey("agent_identity_blueprints.blueprint_id"), index=True)
     did: Mapped[str] = mapped_column(Text, nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -72,6 +76,7 @@ class AgentRecord(Base):
     deprovisioned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     organization: Mapped[Organization] = relationship(back_populates="agent_records")
+    blueprint: Mapped["AgentIdentityBlueprint | None"] = relationship(back_populates="agent_records")
     audit_events: Mapped[list["AuditEvent"]] = relationship(back_populates="agent_record", cascade="all, delete-orphan")
 
 
@@ -159,6 +164,7 @@ class AuthorizationTuple(Base):
 class AgentIdentityBlueprint(Base):
     __tablename__ = "agent_identity_blueprints"
 
+
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False, default="Agent Identity Blueprint")
@@ -233,3 +239,4 @@ RiskFinding = _json_table("risk_findings")
 QuarantineRecord = _json_table("quarantine_records")
 LifecycleWebhookSubscription = _json_table("lifecycle_webhook_subscriptions")
 LifecycleWebhookDelivery = _json_table("lifecycle_webhook_deliveries")
+

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://didone.world/schemas/permission-model.schema.json",
+  "title": "Blueprint Permission Model",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "required_resource_access": {"type": "array", "items": {"$ref": "#/$defs/resourceAccess"}},
+    "inheritable_permissions": {"type": "array", "items": {"$ref": "#/$defs/resourceAccess"}},
+    "consent_grants": {"type": "array", "items": {"$ref": "#/$defs/resourceAccess"}},
+    "direct_agent_grants": {"type": "array", "items": {"$ref": "#/$defs/agentGrant"}},
+    "denied_permissions": {"type": "array", "items": {"$ref": "#/$defs/resourceAccess"}},
+    "effective_permissions": {"type": "array", "items": {"$ref": "#/$defs/resourceAccess"}}
+  },
+  "$defs": {
+    "resourceAccess": {
+      "type": "object",
+      "required": ["resource_app_id", "scopes", "app_roles"],
+      "properties": {
+        "resource_app_id": {"type": "string", "minLength": 1},
+        "scopes": {"type": "array", "items": {"type": "string"}},
+        "app_roles": {"type": "array", "items": {"type": "string"}},
+        "revoked": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "agentGrant": {
+      "allOf": [{"$ref": "#/$defs/resourceAccess"}],
+      "properties": {"agent_record_id": {"type": "string"}}
+    }
+  }
+}

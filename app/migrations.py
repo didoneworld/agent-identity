@@ -10,7 +10,7 @@ from app.database import Base
 import app.db_models  # noqa: F401 - register SQLAlchemy models before create_all
 
 
-LATEST_REVISION = "20260429_02"
+LATEST_REVISION = "20260504_01"
 
 
 def _utc_now() -> datetime:
@@ -78,12 +78,24 @@ def _sso_and_fga_upgrade(engine: Engine) -> None:
     Base.metadata.create_all(bind=engine)
 
 
+def _blueprint_alignment_upgrade(engine: Engine) -> None:
+    Base.metadata.create_all(bind=engine)
+    inspector = inspect(engine)
+    if "agent_records" in inspector.get_table_names():
+        columns = {column["name"] for column in inspector.get_columns("agent_records")}
+        if "blueprint_id" not in columns:
+            with engine.begin() as connection:
+                connection.execute(text("ALTER TABLE agent_records ADD COLUMN blueprint_id VARCHAR(255) NULL"))
+
+
 def migrate_database(engine: Engine) -> str:
     revisions: list[tuple[str, Callable[[Engine], None]]] = [
         ("20260427_01", _initial_schema),
         ("20260429_01", _api_key_role_upgrade),
         ("20260429_02", _sso_and_fga_upgrade),
+
         ("20260504_01", _sso_and_fga_upgrade),
+
     ]
     _ensure_migrations_table(engine)
     for revision, revision_fn in revisions:

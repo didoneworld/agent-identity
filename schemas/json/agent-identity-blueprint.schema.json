@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://didone.world/schemas/agent-identity-blueprint.schema.json",
+  "title": "Agent Identity Blueprint",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "blueprint_id",
+    "display_name",
+    "description",
+    "publisher",
+    "verified_publisher",
+    "publisher_domain",
+    "sign_in_audience",
+    "identifier_uris",
+    "app_roles",
+    "optional_claims",
+    "group_membership_claims",
+    "token_encryption_key_id",
+    "certification",
+    "info_urls",
+    "tags",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "blueprint_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "publisher": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verified_publisher": {
+      "type": "boolean"
+    },
+    "publisher_domain": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sign_in_audience": {
+      "enum": [
+        "single_tenant",
+        "multi_tenant",
+        "personal_accounts",
+        "multi_tenant_and_personal"
+      ]
+    },
+    "identifier_uris": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "app_roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "optional_claims": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "group_membership_claims": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "token_encryption_key_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "certification": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "info_urls": {
+      "type": "object",
+      "required": [
+        "marketing",
+        "support",
+        "terms_of_service",
+        "privacy"
+      ],
+      "properties": {
+        "marketing": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "support": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "terms_of_service": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "privacy": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": [
+        "active",
+        "disabled",
+        "deleted"
+      ]
+    },
+    "credentials": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "required_resource_access": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "resource_app_id",
+              "scopes",
+              "app_roles"
+            ],
+            "properties": {
+              "resource_app_id": {
+                "type": "string"
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "app_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "inheritable_permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "resource_app_id",
+              "scopes",
+              "app_roles"
+            ],
+            "properties": {
+              "resource_app_id": {
+                "type": "string"
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "app_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "consent_grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "resource_app_id",
+              "scopes",
+              "app_roles"
+            ],
+            "properties": {
+              "resource_app_id": {
+                "type": "string"
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "app_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "direct_agent_grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "resource_app_id",
+              "scopes",
+              "app_roles"
+            ],
+            "properties": {
+              "resource_app_id": {
+                "type": "string"
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "app_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "denied_permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "resource_app_id",
+              "scopes",
+              "app_roles"
+            ],
+            "properties": {
+              "resource_app_id": {
+                "type": "string"
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "app_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "effective_permissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "resource_app_id",
+              "scopes",
+              "app_roles"
+            ],
+            "properties": {
+              "resource_app_id": {
+                "type": "string"
+              },
+              "scopes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "app_roles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "owners": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sponsors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extension_fields": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
