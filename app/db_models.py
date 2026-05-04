@@ -294,3 +294,63 @@ class BlueprintSponsor(Base):
     sponsor_type: Mapped[str] = mapped_column(String(32), nullable=False)
     sponsor_id: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+# More missing models from the full merged code
+
+
+class BlueprintCredential(Base):
+    __tablename__ = "blueprint_credentials"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    credential_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    credential_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rotation_status: Mapped[str] = mapped_column(String(64), default="current", nullable=False)
+    last_rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    development_only: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    production_warning: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BlueprintRequiredResourceAccess(Base):
+    __tablename__ = "blueprint_required_resource_access"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    resource_app_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    scopes_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    app_roles_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+
+
+class BlueprintInheritablePermission(Base):
+    __tablename__ = "blueprint_inheritable_permissions"
+    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    permission_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    scope: Mapped[str] = mapped_column(String(64), nullable=False)
+    inheritable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class BlueprintPrincipal(Base):
+    __tablename__ = "blueprint_principals"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    tenant_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    blueprint_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    principal_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    app_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    client_id: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
