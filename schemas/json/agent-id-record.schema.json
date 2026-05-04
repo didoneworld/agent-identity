@@ -3,7 +3,13 @@
   "$id": "https://github.com/didoneworld/agent-identity/releases/download/v0.2.0/agent-id-record.schema.json",
   "title": "Agent ID Record",
   "type": "object",
-  "required": ["agent_id_protocol_version", "agent", "authorization", "governance", "bindings"],
+  "required": [
+    "agent_id_protocol_version",
+    "agent",
+    "authorization",
+    "governance",
+    "bindings"
+  ],
   "properties": {
     "agent_id_protocol_version": {
       "type": "string",
@@ -11,28 +17,62 @@
     },
     "agent": {
       "type": "object",
-      "required": ["did", "display_name", "owner", "role", "environment", "version", "status", "trust_level", "capabilities"],
+      "required": [
+        "did",
+        "display_name",
+        "owner",
+        "role",
+        "environment",
+        "version",
+        "status",
+        "trust_level",
+        "capabilities"
+      ],
       "properties": {
         "did": {
           "type": "string",
           "pattern": "^did:[a-z0-9]+:.+$"
         },
-        "display_name": {"type": "string"},
-        "owner": {"type": "string"},
-        "role": {"type": "string"},
-        "environment": {"type": "string"},
-        "version": {"type": "string"},
+        "display_name": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
         "status": {
           "type": "string",
-          "enum": ["active", "disabled", "quarantine"]
+          "enum": [
+            "active",
+            "disabled",
+            "quarantine"
+          ]
         },
         "trust_level": {
           "type": "string",
-          "enum": ["internal", "curated", "external"]
+          "enum": [
+            "internal",
+            "curated",
+            "external"
+          ]
         },
         "capabilities": {
           "type": "array",
-          "items": {"type": "string"}
+          "items": {
+            "type": "string"
+          }
+        },
+        "blueprint_id": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
@@ -52,11 +92,20 @@
       "properties": {
         "mode": {
           "type": "string",
-          "enum": ["autonomous", "delegated", "hybrid"]
+          "enum": [
+            "autonomous",
+            "delegated",
+            "hybrid"
+          ]
         },
         "subject_context": {
           "type": "string",
-          "enum": ["first_party", "on_behalf_of_user", "on_behalf_of_team", "multi_party"]
+          "enum": [
+            "first_party",
+            "on_behalf_of_user",
+            "on_behalf_of_team",
+            "multi_party"
+          ]
         },
         "delegation_proof_formats": {
           "type": "array",
@@ -73,10 +122,16 @@
           }
         },
         "scope_reference": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "expires_at": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         },
         "max_delegation_depth": {
@@ -104,11 +159,34 @@
       "properties": {
         "provisioning": {
           "type": "string",
-          "enum": ["manual", "scim", "dynamic_client_registration", "internal_iam"]
+          "enum": [
+            "manual",
+            "scim",
+            "dynamic_client_registration",
+            "internal_iam"
+          ]
         },
-        "audit_endpoint": {"type": ["string", "null"], "format": "uri"},
-        "status_endpoint": {"type": ["string", "null"], "format": "uri"},
-        "deprovisioning_endpoint": {"type": ["string", "null"], "format": "uri"},
+        "audit_endpoint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "status_endpoint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "deprovisioning_endpoint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
         "identity_chain_preserved": {
           "type": "boolean"
         }
@@ -121,35 +199,81 @@
         "a2a": {
           "type": "object",
           "properties": {
-            "endpoint_url": {"type": ["string", "null"], "format": "uri"},
-            "agent_card_name": {"type": ["string", "null"]}
+            "endpoint_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            },
+            "agent_card_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           },
-          "required": ["endpoint_url", "agent_card_name"],
+          "required": [
+            "endpoint_url",
+            "agent_card_name"
+          ],
           "additionalProperties": false
         },
         "acp": {
           "type": "object",
           "properties": {
-            "endpoint_url": {"type": ["string", "null"], "format": "uri"}
+            "endpoint_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            }
           },
-          "required": ["endpoint_url"],
+          "required": [
+            "endpoint_url"
+          ],
           "additionalProperties": false
         },
         "anp": {
           "type": "object",
           "properties": {
-            "did": {"type": ["string", "null"], "pattern": "^did:[a-z0-9]+:.+$"},
-            "endpoint_url": {"type": ["string", "null"], "format": "uri"}
+            "did": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^did:[a-z0-9]+:.+$"
+            },
+            "endpoint_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            }
           },
-          "required": ["did", "endpoint_url"],
+          "required": [
+            "did",
+            "endpoint_url"
+          ],
           "additionalProperties": false
         }
       },
-      "required": ["a2a", "acp", "anp"],
+      "required": [
+        "a2a",
+        "acp",
+        "anp"
+      ],
       "additionalProperties": false
     },
     "extensions": {
       "type": "object"
+    },
+    "blueprint_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional Agent Identity Blueprint identifier used to inherit shared metadata and policy."
     }
   },
   "allOf": [
@@ -158,9 +282,13 @@
         "properties": {
           "authorization": {
             "properties": {
-              "mode": {"const": "autonomous"}
+              "mode": {
+                "const": "autonomous"
+              }
             },
-            "required": ["mode"]
+            "required": [
+              "mode"
+            ]
           }
         }
       },
@@ -168,7 +296,9 @@
         "properties": {
           "authorization": {
             "properties": {
-              "subject_context": {"const": "first_party"}
+              "subject_context": {
+                "const": "first_party"
+              }
             }
           }
         }
@@ -179,9 +309,13 @@
         "properties": {
           "authorization": {
             "properties": {
-              "mode": {"const": "delegated"}
+              "mode": {
+                "const": "delegated"
+              }
             },
-            "required": ["mode"]
+            "required": [
+              "mode"
+            ]
           }
         }
       },
@@ -190,7 +324,11 @@
           "authorization": {
             "properties": {
               "subject_context": {
-                "enum": ["on_behalf_of_user", "on_behalf_of_team", "multi_party"]
+                "enum": [
+                  "on_behalf_of_user",
+                  "on_behalf_of_team",
+                  "multi_party"
+                ]
               },
               "scope_reference": {
                 "type": "string",
@@ -200,7 +338,9 @@
           },
           "governance": {
             "properties": {
-              "identity_chain_preserved": {"const": true}
+              "identity_chain_preserved": {
+                "const": true
+              }
             }
           }
         }
@@ -211,9 +351,13 @@
         "properties": {
           "authorization": {
             "properties": {
-              "mode": {"const": "hybrid"}
+              "mode": {
+                "const": "hybrid"
+              }
             },
-            "required": ["mode"]
+            "required": [
+              "mode"
+            ]
           }
         }
       },
@@ -221,7 +365,9 @@
         "properties": {
           "governance": {
             "properties": {
-              "identity_chain_preserved": {"const": true}
+              "identity_chain_preserved": {
+                "const": true
+              }
             }
           }
         }
@@ -232,9 +378,13 @@
         "properties": {
           "governance": {
             "properties": {
-              "identity_chain_preserved": {"const": true}
+              "identity_chain_preserved": {
+                "const": true
+              }
             },
-            "required": ["identity_chain_preserved"]
+            "required": [
+              "identity_chain_preserved"
+            ]
           }
         }
       },

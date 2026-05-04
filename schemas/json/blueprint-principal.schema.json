@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://didone.world/schemas/blueprint-principal.schema.json",
+  "title": "Blueprint Principal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tenant_id", "blueprint_id", "principal_id", "app_id", "client_id", "created_at", "deleted_at"],
+  "properties": {
+    "tenant_id": {"type": "string", "minLength": 1},
+    "blueprint_id": {"type": "string", "minLength": 1},
+    "principal_id": {"type": "string", "minLength": 1},
+    "app_id": {"type": "string", "minLength": 1},
+    "client_id": {"type": ["string", "null"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "deleted_at": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

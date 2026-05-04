@@ -44,6 +44,29 @@ const defaultRecord = {
   extensions: {}
 };
 
+const defaultBlueprint = {
+  blueprint_id: "bp-basic-planner",
+  display_name: "Basic Planner Agent Blueprint",
+  description: "Vendor-neutral DID-first template for planner agents.",
+  publisher: "Didone World",
+  verified_publisher: true,
+  publisher_domain: "didone.world",
+  sign_in_audience: "single_tenant",
+  identifier_uris: ["api://didone.world/agents/planner"],
+  app_roles: [{ value: "Planner.Execute", description: "Run planning tasks" }],
+  optional_claims: { access_token: ["did", "blueprint_id"] },
+  group_membership_claims: [],
+  token_encryption_key_id: null,
+  certification: { profile: "agent-did-blueprint-v1" },
+  info_urls: { marketing: "https://didone.world/agents", support: "https://didone.world/support", terms_of_service: "https://didone.world/terms", privacy: "https://didone.world/privacy" },
+  tags: ["did", "blueprint"],
+  status: "active",
+  permissions: { required_resource_access: [], inheritable_permissions: [], consent_grants: [], direct_agent_grants: [], denied_permissions: [] },
+  owners: ["user:agent-platform-owner"],
+  sponsors: ["group:automation-sponsors"],
+  extension_fields: { alignment_profile: "microsoft-entra-agent-id" }
+};
+
 const state = {
   apiKey: localStorage.getItem("aidp_api_key") || "",
   records: [],
@@ -51,7 +74,8 @@ const state = {
   apiKeys: [],
   auditEvents: [],
   identityProviders: [],
-  fgaTuples: []
+  fgaTuples: [],
+  blueprints: []
 };
 
 const els = {
@@ -73,10 +97,15 @@ const els = {
   fgaList: document.getElementById("fga-list"),
   fgaEmpty: document.getElementById("fga-empty"),
   refreshAll: document.getElementById("refresh-all"),
-  clearSession: document.getElementById("clear-session")
+  clearSession: document.getElementById("clear-session"),
+  blueprintForm: document.getElementById("blueprint-form"),
+  blueprintResult: document.getElementById("blueprint-result"),
+  blueprintsList: document.getElementById("blueprints-list"),
+  blueprintsEmpty: document.getElementById("blueprints-empty")
 };
 
 els.recordForm.record_json.value = JSON.stringify(defaultRecord, null, 2);
+els.blueprintForm.blueprint_json.value = JSON.stringify(defaultBlueprint, null, 2);
 
 function setResult(node, value) {
   node.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -191,6 +220,28 @@ function renderFgaTuples() {
   });
 }
 
+function renderBlueprints() {
+  els.blueprintsList.innerHTML = "";
+  els.blueprintsEmpty.style.display = state.blueprints.length ? "none" : "block";
+  state.blueprints.forEach((item) => {
+    const node = document.createElement("div");
+    node.className = "record-card";
+    node.innerHTML = `
+      <div class="record-top">
+        <div>
+          <p class="record-title">${item.display_name}</p>
+          <div class="audit-meta">${item.blueprint_id} · ${item.publisher}</div>
+        </div>
+        <span class="pill ${item.status === "active" ? "active" : "disabled"}">${item.status}</span>
+      </div>
+      <div class="record-meta">Owners: ${(item.owners || []).join(", ") || "n/a"}</div>
+      <div class="record-meta">Sponsors: ${(item.sponsors || []).join(", ") || "n/a"}</div>
+      <div class="record-meta">Pages: blueprint detail · credentials · required resource access · inheritable permissions · child agent identities · sponsors and owners · audit events</div>
+    `;
+    els.blueprintsList.appendChild(node);
+  });
+}
+
 function renderRecords() {
   els.recordsList.innerHTML = "";
   els.recordsEmpty.style.display = state.records.length ? "none" : "block";
@@ -239,13 +290,14 @@ function renderRecords() {
 
 async function refreshAuthedData() {
   if (!state.apiKey) return;
-  const [organizations, apiKeys, records, auditEvents, identityProviders, fgaTuples] = await Promise.all([
+  const [organizations, apiKeys, records, auditEvents, identityProviders, fgaTuples, blueprints] = await Promise.all([
     api("/v1/organizations"),
     api("/v1/api-keys"),
     api("/v1/agent-records"),
     api("/v1/audit-events"),
     api("/v1/identity-providers"),
-    api("/v1/fga/tuples")
+    api("/v1/fga/tuples"),
+    api("/v1/blueprints")
   ]);
   state.organizations = organizations;
   state.apiKeys = apiKeys;
@@ -253,12 +305,14 @@ async function refreshAuthedData() {
   state.auditEvents = auditEvents;
   state.identityProviders = identityProviders;
   state.fgaTuples = fgaTuples;
+  state.blueprints = blueprints;
   renderOrganizations();
   renderApiKeys();
   renderRecords();
   renderAudit();
   renderIdentityProviders();
   renderFgaTuples();
+  renderBlueprints();
 }
 
 els.bootstrapForm.addEventListener("submit", async (event) => {
@@ -287,6 +341,18 @@ els.sessionForm.addEventListener("submit", async (event) => {
     setResult(els.sessionResult, "Session connected.");
   } catch (error) {
     setResult(els.sessionResult, String(error));
+  }
+});
+
+els.blueprintForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    const payload = JSON.parse(els.blueprintForm.blueprint_json.value);
+    const result = await api("/v1/blueprints", { method: "POST", body: JSON.stringify(payload) });
+    setResult(els.blueprintResult, result);
+    await refreshAuthedData();
+  } catch (error) {
+    setResult(els.blueprintResult, String(error));
   }
 });
 
@@ -322,12 +388,14 @@ els.clearSession.addEventListener("click", () => {
   state.auditEvents = [];
   state.identityProviders = [];
   state.fgaTuples = [];
+  state.blueprints = [];
   renderOrganizations();
   renderApiKeys();
   renderRecords();
   renderAudit();
   renderIdentityProviders();
   renderFgaTuples();
+  renderBlueprints();
 });
 
 updateSession();

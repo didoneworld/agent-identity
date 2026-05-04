@@ -10,10 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db, init_database
-from app.db_models import AgentRecord
+from app.db_models import AgentRecord, AgentIdentityBlueprint, BlueprintCredential, BlueprintOwner, BlueprintPrincipal, BlueprintSponsor, BlueprintRequiredResourceAccess, BlueprintInheritablePermission, BlueprintConsentGrant
 from app.migrations import migrate_database
 from app.runtime import InMemoryRateLimiter, build_request_context, log_request, rate_limit_response
 from app.schemas import (
+    AgentIdentityBlueprintPatch,
+    AgentIdentityBlueprintResponse,
+    AgentIdentityBlueprintWrite,
     AgentRecordResponse,
     AuthorizationCheckRequest,
     AuthorizationCheckResponse,
@@ -25,8 +28,15 @@ from app.schemas import (
     ApiKeyRevokeResponse,
     ApiKeySummary,
     AuditEventResponse,
+    BlueprintCredentialResponse,
+    BlueprintCredentialWrite,
+    BlueprintPrincipalResponse,
+    BlueprintPrincipalWrite,
+    BlueprintPolicyActionResponse,
     BootstrapResponse,
     DeprovisionRequest,
+    EffectivePermissionsResponse,
+    PermissionGrant,
     IdentityProviderConfigRequest,
     IdentityProviderConfigResponse,
     OidcCallbackRequest,
@@ -62,6 +72,95 @@ def _record_response(record: AgentRecord) -> AgentRecordResponse:
         created_at=record.created_at,
         updated_at=record.updated_at,
         deprovisioned_at=record.deprovisioned_at,
+    )
+
+def _blueprint_response(db: Session, blueprint: AgentIdentityBlueprint) -> AgentIdentityBlueprintResponse:
+    owners = [o.subject for o in db.query(BlueprintOwner).filter_by(organization_id=blueprint.organization_id, blueprint_id=blueprint.blueprint_id).all()]
+    sponsors = [s.subject for s in db.query(BlueprintSponsor).filter_by(organization_id=blueprint.organization_id, blueprint_id=blueprint.blueprint_id).all()]
+    required_resource_access = [
+        {"resource_app_id": item.resource_app_id, "scopes": item.scopes_json or [], "app_roles": item.app_roles_json or []}
+        for item in db.query(BlueprintRequiredResourceAccess).filter_by(organization_id=blueprint.organization_id, blueprint_id=blueprint.blueprint_id).all()
+    ]
+    inheritable_permissions = [
+        {"resource_app_id": item.resource_app_id, "scopes": item.scopes_json or [], "app_roles": item.app_roles_json or []}
+        for item in db.query(BlueprintInheritablePermission).filter_by(organization_id=blueprint.organization_id, blueprint_id=blueprint.blueprint_id).all()
+    ]
+    consent_grants = [
+        {"resource_app_id": item.resource_app_id, "scopes": item.scopes_json or [], "app_roles": item.app_roles_json or [], "revoked": item.revoked}
+        for item in db.query(BlueprintConsentGrant).filter_by(organization_id=blueprint.organization_id, blueprint_id=blueprint.blueprint_id).all()
+    ]
+    credentials = [
+        {
+            "credential_id": item.credential_id,
+            "credential_type": item.credential_type,
+            "display_name": item.display_name,
+            "metadata": item.metadata_json or {},
+            "expires_at": item.expires_at,
+            "rotation_status": item.rotation_status,
+            "last_rotated_at": item.last_rotated_at,
+            "development_only": item.development_only,
+        }
+        for item in blueprint.credentials
+        if item.deleted_at is None
+    ]
+    return AgentIdentityBlueprintResponse(
+        id=blueprint.id,
+        organization_id=blueprint.organization_id,
+        blueprint_id=blueprint.blueprint_id,
+        display_name=blueprint.display_name,
+        description=blueprint.description,
+        publisher=blueprint.publisher,
+        verified_publisher=blueprint.verified_publisher,
+        publisher_domain=blueprint.publisher_domain,
+        sign_in_audience=blueprint.sign_in_audience,
+        identifier_uris=blueprint.identifier_uris_json or [],
+        app_roles=blueprint.app_roles_json or [],
+        optional_claims=blueprint.optional_claims_json or {},
+        group_membership_claims=blueprint.group_membership_claims_json or [],
+        token_encryption_key_id=blueprint.token_encryption_key_id,
+        certification=blueprint.certification_json or {},
+        info_urls=blueprint.info_urls_json or {},
+        tags=blueprint.tags_json or [],
+        status=blueprint.status,
+        credentials=credentials,
+        permissions={"required_resource_access": required_resource_access, "inheritable_permissions": inheritable_permissions, "consent_grants": consent_grants, "direct_agent_grants": [], "denied_permissions": []},
+        owners=owners,
+        sponsors=sponsors,
+        extension_fields=blueprint.extension_fields_json or {},
+        created_at=blueprint.created_at,
+        updated_at=blueprint.updated_at,
+    )
+
+
+def _credential_response(credential: BlueprintCredential) -> BlueprintCredentialResponse:
+    return BlueprintCredentialResponse(
+        id=credential.id,
+        organization_id=credential.organization_id,
+        blueprint_id=credential.blueprint_id,
+        credential_id=credential.credential_id,
+        credential_type=credential.credential_type,
+        display_name=credential.display_name,
+        metadata=credential.metadata_json or {},
+        expires_at=credential.expires_at,
+        rotation_status=credential.rotation_status,
+        last_rotated_at=credential.last_rotated_at,
+        development_only=credential.development_only,
+        production_warning=credential.production_warning,
+        created_at=credential.created_at,
+        deleted_at=credential.deleted_at,
+    )
+
+def _principal_response(principal: BlueprintPrincipal) -> BlueprintPrincipalResponse:
+    return BlueprintPrincipalResponse(
+        id=principal.id,
+        organization_id=principal.organization_id,
+        blueprint_id=principal.blueprint_id,
+        tenant_id=principal.tenant_id,
+        principal_id=principal.principal_id,
+        app_id=principal.app_id,
+        client_id=principal.client_id,
+        created_at=principal.created_at,
+        deleted_at=principal.deleted_at,
     )
 
 
@@ -402,6 +501,148 @@ def create_app(
         if api_key is None:
             raise HTTPException(status_code=404, detail="api key not found")
         return ApiKeyRevokeResponse(id=api_key.id, is_active=api_key.is_active, revoked_at=api_key.revoked_at)
+
+    @app.post("/v1/blueprints", response_model=AgentIdentityBlueprintResponse, status_code=201)
+    def create_blueprint(payload: AgentIdentityBlueprintWrite, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        try:
+            blueprint = service.create_blueprint(db, auth.organization_id, auth.actor_label, payload)
+        except ProtocolValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return _blueprint_response(db, blueprint)
+
+    @app.get("/v1/blueprints", response_model=list[AgentIdentityBlueprintResponse])
+    def list_blueprints(db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        return [_blueprint_response(db, blueprint) for blueprint in service.list_blueprints(db, auth.organization_id)]
+
+    @app.get("/v1/blueprints/{blueprint_id}", response_model=AgentIdentityBlueprintResponse)
+    def get_blueprint(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        blueprint = service.get_blueprint(db, auth.organization_id, blueprint_id)
+        if blueprint is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return _blueprint_response(db, blueprint)
+
+    @app.patch("/v1/blueprints/{blueprint_id}", response_model=AgentIdentityBlueprintResponse)
+    def patch_blueprint(blueprint_id: str, payload: AgentIdentityBlueprintPatch, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        blueprint = service.update_blueprint(db, auth.organization_id, auth.actor_label, blueprint_id, payload)
+        if blueprint is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return _blueprint_response(db, blueprint)
+
+    @app.delete("/v1/blueprints/{blueprint_id}", response_model=AgentIdentityBlueprintResponse)
+    def delete_blueprint(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin"))):
+        blueprint = service.delete_blueprint(db, auth.organization_id, auth.actor_label, blueprint_id)
+        if blueprint is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return _blueprint_response(db, blueprint)
+
+    @app.post("/v1/blueprints/{blueprint_id}/disable", response_model=BlueprintPolicyActionResponse)
+    def disable_blueprint(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        blueprint, affected = service.set_blueprint_status(db, auth.organization_id, auth.actor_label, blueprint_id, enabled=False)
+        if blueprint is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return BlueprintPolicyActionResponse(blueprint_id=blueprint.blueprint_id, status=blueprint.status, affected_agent_record_ids=affected)
+
+    @app.post("/v1/blueprints/{blueprint_id}/enable", response_model=BlueprintPolicyActionResponse)
+    def enable_blueprint(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        blueprint, affected = service.set_blueprint_status(db, auth.organization_id, auth.actor_label, blueprint_id, enabled=True)
+        if blueprint is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return BlueprintPolicyActionResponse(blueprint_id=blueprint.blueprint_id, status=blueprint.status, affected_agent_record_ids=affected)
+
+    @app.get("/v1/blueprints/{blueprint_id}/agent-records", response_model=list[AgentRecordResponse])
+    def list_blueprint_agent_records(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        if service.get_blueprint(db, auth.organization_id, blueprint_id) is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return [_record_response(record) for record in service.list_records_by_blueprint(db, auth.organization_id, blueprint_id)]
+
+    @app.post("/v1/blueprints/{blueprint_id}/agent-records", response_model=AgentRecordResponse, status_code=201)
+    def create_blueprint_agent_record(blueprint_id: str, payload: AgentRecordWrite, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        try:
+            record = service.create_record_from_blueprint(db, auth.organization_id, auth.actor_label, blueprint_id, payload)
+        except ProtocolValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return _record_response(record)
+
+    @app.get("/v1/blueprints/{blueprint_id}/permissions/effective", response_model=EffectivePermissionsResponse)
+    def preview_effective_permissions(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader")), agent_record_id: str | None = None):
+        if service.get_blueprint(db, auth.organization_id, blueprint_id) is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return EffectivePermissionsResponse(**service.effective_permissions(db, auth.organization_id, blueprint_id, agent_record_id))
+
+
+    @app.post("/v1/blueprints/{blueprint_id}/permissions/revoke")
+    def revoke_blueprint_permission(blueprint_id: str, payload: PermissionGrant, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        grant = service.revoke_blueprint_permission_grant(db, auth.organization_id, auth.actor_label, blueprint_id, payload.resource_app_id, payload.scopes, payload.app_roles)
+        if grant is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return {"blueprint_id": blueprint_id, "revoked_permission": grant}
+
+    @app.post("/v1/blueprints/{blueprint_id}/credentials", response_model=BlueprintCredentialResponse, status_code=201)
+    def add_blueprint_credential(blueprint_id: str, payload: BlueprintCredentialWrite, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        try:
+            credential = service.add_blueprint_credential(db, auth.organization_id, auth.actor_label, blueprint_id, payload)
+        except ProtocolValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return _credential_response(credential)
+
+    @app.post("/v1/blueprints/{blueprint_id}/credentials/{credential_id}/rotate", response_model=BlueprintCredentialResponse)
+    def rotate_blueprint_credential(blueprint_id: str, credential_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        credential = service.rotate_blueprint_credential(db, auth.organization_id, auth.actor_label, blueprint_id, credential_id)
+        if credential is None:
+            raise HTTPException(status_code=404, detail="credential not found")
+        return _credential_response(credential)
+
+    @app.delete("/v1/blueprints/{blueprint_id}/credentials/{credential_id}", response_model=BlueprintCredentialResponse)
+    def delete_blueprint_credential(blueprint_id: str, credential_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        credential = service.delete_blueprint_credential(db, auth.organization_id, auth.actor_label, blueprint_id, credential_id)
+        if credential is None:
+            raise HTTPException(status_code=404, detail="credential not found")
+        return _credential_response(credential)
+
+
+    @app.post("/v1/blueprints/{blueprint_id}/principals", response_model=BlueprintPrincipalResponse, status_code=201)
+    def create_blueprint_principal(blueprint_id: str, payload: BlueprintPrincipalWrite, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        try:
+            principal = service.create_blueprint_principal(db, auth.organization_id, auth.actor_label, blueprint_id, payload)
+        except ProtocolValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return _principal_response(principal)
+
+    @app.delete("/v1/blueprints/{blueprint_id}/principals/{principal_id}", response_model=BlueprintPrincipalResponse)
+    def delete_blueprint_principal(blueprint_id: str, principal_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        principal = service.delete_blueprint_principal(db, auth.organization_id, auth.actor_label, blueprint_id, principal_id)
+        if principal is None:
+            raise HTTPException(status_code=404, detail="blueprint principal not found")
+        return _principal_response(principal)
+
+    @app.post("/v1/blueprints/{blueprint_id}/deprovision-all", response_model=BlueprintPolicyActionResponse)
+    def deprovision_blueprint_children(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        records = service.list_records_by_blueprint(db, auth.organization_id, blueprint_id)
+        if service.get_blueprint(db, auth.organization_id, blueprint_id) is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        affected = []
+        for record in records:
+            service.deprovision_record(db, auth.organization_id, auth.actor_label, record.id, "blueprint-level deprovision")
+            affected.append(record.id)
+        return BlueprintPolicyActionResponse(blueprint_id=blueprint_id, status="deprovisioned", affected_agent_record_ids=affected)
+
+    @app.post("/v1/blueprints/{blueprint_id}/quarantine-all", response_model=BlueprintPolicyActionResponse)
+    def quarantine_blueprint_children(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer"))):
+        records = service.list_records_by_blueprint(db, auth.organization_id, blueprint_id)
+        if service.get_blueprint(db, auth.organization_id, blueprint_id) is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        affected = []
+        for record in records:
+            record.status = "quarantined"; record.record_json.setdefault("agent", {})["status"] = "quarantined"; affected.append(record.id)
+        db.commit()
+        return BlueprintPolicyActionResponse(blueprint_id=blueprint_id, status="quarantined", affected_agent_record_ids=affected)
+
+    @app.get("/v1/blueprints/{blueprint_id}/export-child-inventory", response_model=BlueprintPolicyActionResponse)
+    def export_blueprint_inventory(blueprint_id: str, db: Annotated[Session, Depends(get_db)], auth=Depends(require_role("admin", "writer", "reader"))):
+        records = service.list_records_by_blueprint(db, auth.organization_id, blueprint_id)
+        if service.get_blueprint(db, auth.organization_id, blueprint_id) is None:
+            raise HTTPException(status_code=404, detail="blueprint not found")
+        return BlueprintPolicyActionResponse(blueprint_id=blueprint_id, status="exported", affected_agent_record_ids=[r.id for r in records], exported_inventory=[_record_response(r).model_dump(mode="json") for r in records])
 
     @app.get("/v1/agent-records", response_model=list[AgentRecordResponse])
     def list_agent_records(
