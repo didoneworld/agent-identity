@@ -1,0 +1,9 @@
+{
+  "tenant_id": "tenant-customer-001",
+  "blueprint_id": "bp-knowledge-agent",
+  "principal_id": "spn-local-knowledge-agent",
+  "app_id": "app-global-knowledge-agent",
+  "client_id": "client-local-knowledge-agent",
+  "created_at": "2026-05-04T00:00:00Z",
+  "deleted_at": null
+}

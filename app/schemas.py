@@ -215,3 +215,140 @@ class ServiceInfoResponse(BaseModel):
     schema_revision: str
     rate_limit_requests: int
     rate_limit_window_seconds: int
+
+class InfoUrls(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    marketing: str | None = None
+    support: str | None = None
+    terms_of_service: str | None = None
+    privacy: str | None = None
+
+
+class BlueprintCredentialWrite(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    credential_id: str | None = Field(default=None, min_length=1, max_length=255)
+    credential_type: str = Field(pattern=r"^(federated_identity|key|certificate|password|managed_identity)$")
+    display_name: str = Field(min_length=1, max_length=255)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    expires_at: datetime | None = None
+    rotation_status: str = Field(default="current", pattern=r"^(current|rotation_due|rotating|rotated|expired|revoked)$")
+    last_rotated_at: datetime | None = None
+    development_only: bool = False
+
+
+class BlueprintCredentialResponse(BlueprintCredentialWrite):
+    id: str
+    organization_id: str
+    blueprint_id: str
+    production_warning: str | None = None
+    created_at: datetime
+    deleted_at: datetime | None = None
+
+
+class PermissionGrant(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    resource_app_id: str = Field(min_length=1, max_length=255)
+    scopes: list[str] = Field(default_factory=list)
+    app_roles: list[str] = Field(default_factory=list)
+
+
+class PermissionModel(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    required_resource_access: list[PermissionGrant] = Field(default_factory=list)
+    inheritable_permissions: list[PermissionGrant] = Field(default_factory=list)
+    consent_grants: list[PermissionGrant] = Field(default_factory=list)
+    direct_agent_grants: list[PermissionGrant] = Field(default_factory=list)
+    denied_permissions: list[PermissionGrant] = Field(default_factory=list)
+
+
+class EffectivePermissionsResponse(BaseModel):
+    blueprint_id: str
+    inherited_blueprint_grants: list[PermissionGrant]
+    direct_agent_grants: list[PermissionGrant]
+    denied_permissions: list[PermissionGrant]
+    effective_permissions: list[PermissionGrant]
+
+
+class BlueprintPrincipalWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tenant_id: str = Field(min_length=1, max_length=255)
+    principal_id: str = Field(min_length=1, max_length=255)
+    app_id: str = Field(min_length=1, max_length=255)
+    client_id: str | None = Field(default=None, min_length=1, max_length=255)
+
+
+class BlueprintPrincipalResponse(BlueprintPrincipalWrite):
+    id: str
+    organization_id: str
+    blueprint_id: str
+    created_at: datetime
+    deleted_at: datetime | None = None
+
+
+class AgentIdentityBlueprintWrite(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    blueprint_id: str = Field(min_length=1, max_length=255)
+    display_name: str = Field(min_length=1, max_length=255)
+    description: str = ""
+    publisher: str = Field(min_length=1, max_length=255)
+    verified_publisher: bool = False
+    publisher_domain: str | None = Field(default=None, max_length=255)
+    sign_in_audience: str = Field(default="single_tenant", pattern=r"^(single_tenant|multi_tenant|personal_accounts|multi_tenant_and_personal)$")
+    identifier_uris: list[str] = Field(default_factory=list)
+    app_roles: list[dict[str, Any]] = Field(default_factory=list)
+    optional_claims: dict[str, Any] = Field(default_factory=dict)
+    group_membership_claims: list[str] = Field(default_factory=list)
+    token_encryption_key_id: str | None = None
+    certification: dict[str, Any] = Field(default_factory=dict)
+    info_urls: InfoUrls = Field(default_factory=InfoUrls)
+    tags: list[str] = Field(default_factory=list)
+    status: str = Field(default="active", pattern=r"^(active|disabled|deleted)$")
+    credentials: list[BlueprintCredentialWrite] = Field(default_factory=list)
+    permissions: PermissionModel = Field(default_factory=PermissionModel)
+    owners: list[str] = Field(default_factory=list)
+    sponsors: list[str] = Field(default_factory=list)
+    extension_fields: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentIdentityBlueprintPatch(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    display_name: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = None
+    publisher: str | None = Field(default=None, min_length=1, max_length=255)
+    verified_publisher: bool | None = None
+    publisher_domain: str | None = Field(default=None, max_length=255)
+    sign_in_audience: str | None = Field(default=None, pattern=r"^(single_tenant|multi_tenant|personal_accounts|multi_tenant_and_personal)$")
+    identifier_uris: list[str] | None = None
+    app_roles: list[dict[str, Any]] | None = None
+    optional_claims: dict[str, Any] | None = None
+    group_membership_claims: list[str] | None = None
+    token_encryption_key_id: str | None = None
+    certification: dict[str, Any] | None = None
+    info_urls: InfoUrls | None = None
+    tags: list[str] | None = None
+    status: str | None = Field(default=None, pattern=r"^(active|disabled|deleted)$")
+    permissions: PermissionModel | None = None
+    owners: list[str] | None = None
+    sponsors: list[str] | None = None
+    extension_fields: dict[str, Any] | None = None
+
+
+class AgentIdentityBlueprintResponse(AgentIdentityBlueprintWrite):
+    id: str
+    organization_id: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class BlueprintPolicyActionResponse(BaseModel):
+    blueprint_id: str
+    status: str
+    affected_agent_record_ids: list[str] = Field(default_factory=list)
+    exported_inventory: list[dict[str, Any]] | None = None

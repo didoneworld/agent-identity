@@ -92,6 +92,28 @@
           </section>
         </section>
 
+        <section class="panel-grid wide">
+          <section class="panel highlight">
+            <div class="panel-head">
+              <h3>Blueprint List</h3>
+              <p>Reusable Agent Identity Blueprints, owners, sponsors, credentials, required resource access, inheritable permissions, child agent identities, and audit events.</p>
+            </div>
+            <div id="blueprints-empty" class="empty">No blueprints loaded yet.</div>
+            <div id="blueprints-list" class="record-list"></div>
+          </section>
+
+          <section class="panel highlight">
+            <div class="panel-head">
+              <h3>Create Blueprint</h3>
+              <p>Create blueprint detail pages for credentials, permissions, sponsors and owners.</p>
+            </div>
+            <form id="blueprint-form" class="stack">
+              <textarea name="blueprint_json" rows="18"></textarea>
+              <button type="submit">Create blueprint</button>
+            </form>
+            <pre id="blueprint-result" class="result"></pre>
+          </section>
+        </section>
 
         <section class="panel-grid">
           <section class="panel highlight">

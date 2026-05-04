@@ -38,6 +38,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, HTTPException, status
+from fastapi import Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -123,7 +124,7 @@ async def register_receiver(body: ReceiverRegistration) -> ReceiverResponse:
     )
 
 
-@ssf_router.delete("/receivers/{receiver_id}", status_code=204)
+@ssf_router.delete("/receivers/{receiver_id}", status_code=204, response_class=Response, response_model=None)
 async def deregister_receiver(receiver_id: str) -> None:
     if receiver_id not in _RECEIVERS:
         raise HTTPException(status_code=404, detail="Receiver not found")
