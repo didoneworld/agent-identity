@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentdid-sdk"
+version = "0.1.0"
+description = "Adapter-friendly Python SDK for Agent DID lifecycle and blueprint APIs"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.25"]
+license = { text = "MIT" }
+authors = [{ name = "DID One World" }]
+keywords = ["did", "agent", "identity", "lifecycle", "sdk"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agentdid_sdk*"]

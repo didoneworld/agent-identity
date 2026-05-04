@@ -101,3 +101,7 @@ Existing Agent ID records without lifecycle state are interpreted as `active` wh
 ## Examples
 
 See `examples/lifecycle/` and JSON schemas in `schemas/json/` for policy, renewal, quarantine, deprovisioning, credential, permission, audit, and webhook payloads.
+
+## SDK adaptation
+
+Use the Python SDK in `sdk/python` to adapt lifecycle workflows into external governance portals, policy workers, ticketing automations, or vendor-specific identity platforms. The SDK accepts API keys, bearer tokens, dynamic auth providers, custom headers, and custom `httpx` transports so integrators can bring their own authentication and runtime environment while calling the same DID-first APIs.

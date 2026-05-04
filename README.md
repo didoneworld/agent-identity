@@ -267,3 +267,7 @@ Highlights:
 - Backward-compatible migration semantics for records without lifecycle state: enabled records are treated as `active`, disabled records as `suspended`, and previously deprovisioned records as `archived`/`deprovisioned`.
 
 See [Lifecycle Management](docs/lifecycle-management.md) for state diagrams, policy configuration, workflows, APIs, examples, and migration guidance.
+
+### SDKs
+
+A Python SDK is available in [`sdk/python`](sdk/python/README.md) for adopters who want to integrate Agent DID lifecycle operations into their own portals, workers, CI/CD automations, or identity governance systems. It supports API-key, bearer-token, and dynamic auth-provider adapters while keeping Agent DID lifecycle operations vendor-neutral.
