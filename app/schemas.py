@@ -280,3 +280,125 @@ class BlueprintLifecycleResponse(BaseModel):
     metadata: dict[str, Any]
     updated_at: datetime
 
+
+
+class AgentIdentityBlueprintWrite(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    blueprint_id: str
+    display_name: str
+    description: str = ""
+    publisher: str
+    verified_publisher: bool = False
+    publisher_domain: str | None = None
+    sign_in_audience: str = "single_tenant"
+    identifier_uris_json: list = Field(default_factory=list)
+    app_roles_json: list = Field(default_factory=list)
+    optional_claims_json: dict = Field(default_factory=dict)
+    group_membership_claims_json: list = Field(default_factory=list)
+    token_encryption_key_id: str | None = None
+    certification_json: dict = Field(default_factory=dict)
+    info_urls_json: dict = Field(default_factory=dict)
+    tags_json: list = Field(default_factory=list)
+    status: str = "active"
+    extension_fields_json: dict = Field(default_factory=dict)
+
+
+class AgentIdentityBlueprintPatch(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    display_name: str | None = None
+    description: str | None = None
+    publisher: str | None = None
+    verified_publisher: bool | None = None
+    publisher_domain: str | None = None
+    sign_in_audience: str | None = None
+    identifier_uris_json: list | None = None
+    app_roles_json: list | None = None
+    optional_claims_json: dict | None = None
+    group_membership_claims_json: list | None = None
+    token_encryption_key_id: str | None = None
+    certification_json: dict | None = None
+    info_urls_json: dict | None = None
+    tags_json: list | None = None
+    extension_fields_json: dict | None = None
+
+
+class AgentIdentityBlueprintResponse(BaseModel):
+    id: str
+    organization_id: str
+    blueprint_id: str
+    display_name: str
+    description: str
+    publisher: str
+    verified_publisher: bool
+    publisher_domain: str | None
+    sign_in_audience: str
+    identifier_uris_json: list
+    app_roles_json: list
+    optional_claims_json: dict
+    group_membership_claims_json: list
+    token_encryption_key_id: str | None
+    certification_json: dict
+    info_urls_json: dict
+    tags_json: list
+    status: str
+    extension_fields_json: dict
+    created_at: datetime
+    updated_at: datetime
+
+
+class BlueprintPrincipalWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tenant_id: str
+    principal_id: str
+    app_id: str
+    client_id: str | None = None
+
+
+class BlueprintPrincipalResponse(BaseModel):
+    id: str
+    organization_id: str
+    tenant_id: str
+    blueprint_id: str
+    principal_id: str
+    app_id: str
+    client_id: str | None
+    created_at: datetime
+    deleted_at: datetime | None
+
+
+class BlueprintCredentialWrite(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    credential_id: str
+    credential_type: str
+    display_name: str
+    metadata_json: dict = Field(default_factory=dict)
+    expires_at: datetime | None = None
+    development_only: bool = False
+
+
+class BlueprintCredentialResponse(BaseModel):
+    id: str
+    organization_id: str
+    blueprint_id: str
+    credential_id: str
+    credential_type: str
+    display_name: str
+    metadata_json: dict
+    expires_at: datetime | None
+    rotation_status: str
+    last_rotated_at: datetime | None
+    development_only: bool
+    production_warning: str | None
+    created_at: datetime
+    deleted_at: datetime | None
+
+
+class BlueprintPolicyActionResponse(BaseModel):
+    action: str
+    blueprint_id: str
+    success: bool
+    message: str
