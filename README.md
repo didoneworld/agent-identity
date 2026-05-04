@@ -1,53 +1,170 @@
-# Agent DID 
+# Agent DID
 
-Open source vendor-agnostic agent identity and access management control plane based on OIDC and W3C DIDs.
+Open source, vendor-agnostic agent identity and access management control plane built around OpenID Connect, SAML, SCIM, Shared Signals, and W3C Decentralized Identifiers.
 
-## Scope
+Agent DID defines an Agent ID record format and provides a runnable FastAPI reference implementation for managing agent identities, governance metadata, authorization, lifecycle operations, and enterprise identity integrations.
 
-This repository defines:
-- the Agent ID protocol draft
-- the core DID-backed agent record
-- authorization and governance metadata for agent operation
-- protocol binding examples for A2A, ACP, and ANP
-- publication and compatibility guidance
+## What this repository contains
 
-This repository does not define agent messaging. It is intended to work alongside interoperability protocols such as A2A, ACP, and ANP.
+This repository includes both the Agent ID protocol draft and a working SaaS-style control plane.
 
-## Layout
+### Protocol and interoperability
 
-- `docs/agent-id-spec.md`: protocol draft
-- `docs/product-documentation.md`: product features, configuration, defaults, and API documentation
-- `docs/openid-alignment.md`: rationale for the authorization and governance additions
-- `docs/compatibility.md`: evolution and compatibility rules
-- `schemas/agent-id-record.yaml`: core record example
-- `schemas/json/agent-id-record.schema.json`: JSON Schema for validation
-- `examples/a2a-agent-card.json`: A2A binding example
-- `templates/publish-checklist.md`: publication checklist
+- Agent ID protocol draft
+- DID-backed agent identity record
+- Governance and lifecycle metadata for long-running agents
+- Authorization metadata for delegated and autonomous agent operation
+- Protocol binding examples for A2A, ACP, and ANP
+- Publication and compatibility guidance
+- JSON Schema for validating Agent ID records
 
-## SaaS Control Plane
+Agent DID does not define agent-to-agent messaging. It is designed to work alongside interoperability protocols such as A2A, ACP, and ANP.
 
-The repository now includes a FastAPI-based SaaS control plane for managing Agent ID records per organization.
+### Control plane
 
-The root route `/` now serves a built-in admin console for:
-- tenant bootstrap
-- API key session entry
-- agent record listing and raw JSON upsert
-- audit log viewing
-- deprovision actions
+The FastAPI application provides a tenant-scoped registry and admin surface for Agent ID records.
 
-Core endpoints:
+Current capabilities include:
+
+- tenant bootstrap with first admin API key
+- API key authentication with `X-API-Key`
+- bearer session authentication
+- admin, writer, and reader roles
+- OIDC and SAML identity provider configuration
+- OIDC discovery and SSO routes
+- SAML ACS support
+- SCIM lifecycle endpoints
+- Shared Signals Framework routes
+- approval workflow routes
+- database-backed Agent ID registry
+- record-level fine-grained authorization tuples
+- audit logging for identity and lifecycle events
+- deprovisioning support
+- schema revision tracking and startup migrations
+- in-memory request rate limiting
+- request ID logging
+- SQLite for local development
+- `DATABASE_URL` support for Postgres deployments
+- built-in web admin console at `/`
+
+## Repository layout
+
+```text
+app/                         FastAPI SaaS control plane
+app/routers/                 OIDC, SAML, SCIM, session, and discovery routers
+app/static/                  Built-in admin console assets
+docs/agent-id-spec.md        Agent ID protocol draft
+docs/product-documentation.md Product behavior, configuration, defaults, and API docs
+docs/openid-alignment.md     Rationale for OpenID authorization and governance alignment
+docs/compatibility.md        Evolution and compatibility rules
+schemas/agent-id-record.yaml Core Agent ID record example
+schemas/json/agent-id-record.schema.json JSON Schema for validation
+examples/                    Protocol binding and DID method examples
+templates/publish-checklist.md Publication checklist
+tests/                       Automated test suite
+scripts/                     Validation and utility scripts
+```
+
+## Quick start
+
+### Run locally with Python
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 -m uvicorn app.main:app --reload
+```
+
+Open the admin console:
+
+```text
+http://127.0.0.1:8000/
+```
+
+Check service health:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Bootstrap the first organization and admin API key:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/bootstrap \
+  -H 'content-type: application/json' \
+  -d '{"organization_name":"Didone World","organization_slug":"didoneworld","api_key_label":"ops-admin"}'
+```
+
+The bootstrap response returns the first admin API key. Store it securely; it is used with the `X-API-Key` header for authenticated API calls.
+
+## Run with Docker
+
+Build and run locally:
+
+```bash
+docker build -t agent-identity:local .
+docker run --rm -p 8000:8000 agent-identity:local
+```
+
+Run validation inside the image:
+
+```bash
+docker run --rm agent-identity:local /app/scripts/validate.sh
+```
+
+Pull a published image:
+
+```bash
+docker run --rm -p 8000:8000 autonomyx/agent-identity:latest
+```
+
+Published images:
+
+- Docker Hub: `autonomyx/agent-identity:latest`
+- GHCR: `ghcr.io/didoneworld/agent-identity:latest`
+
+## Run with Docker Compose
+
+Start the app with Postgres:
+
+```bash
+docker compose up --build
+```
+
+The compose stack exposes:
+
+- app: `http://127.0.0.1:8000`
+- database: `postgresql://agentid:agentid@127.0.0.1:5432/agentid`
+
+Use alternate host ports when defaults are already taken:
+
+```bash
+APP_PORT=8012 POSTGRES_PORT=5433 docker compose up --build
+```
+
+Create a local environment file from the template:
+
+```bash
+cp .env.example .env
+```
+
+## Core API surface
+
+Unauthenticated:
+
 - `GET /health`
+- `GET /`
 - `POST /v1/bootstrap`
-- `GET /v1/organizations`
-- `GET /v1/identity-providers`
-- `POST /v1/identity-providers/oidc`
-- `POST /v1/identity-providers/saml`
+- `GET /.well-known/*`
 - `GET /v1/sso/oidc/start/{organization_slug}`
 - `POST /v1/sso/oidc/callback/{organization_slug}`
 - `POST /v1/sso/saml/acs/{organization_slug}`
-- `GET /v1/api-keys`
-- `POST /v1/api-keys`
-- `POST /v1/api-keys/{api_key_id}/revoke`
+
+Authenticated with API key or bearer session:
+
+- `GET /v1/organizations`
+- `GET /v1/identity-providers`
 - `GET /v1/agent-records`
 - `POST /v1/agent-records`
 - `GET /v1/agent-records/{record_id}`
@@ -57,142 +174,81 @@ Core endpoints:
 - `GET /v1/fga/tuples`
 - `POST /v1/fga/tuples`
 - `POST /v1/fga/check`
+- `GET /v1/scim/v2/*`
+- `POST /v1/ssf/*`
+- `GET /v1/approvals/*`
 
-Current product slice:
-- tenant bootstrap with a first admin API key
-- API key authentication via `X-API-Key`
-- role-based API keys with `admin`, `writer`, and `reader` scopes
-- OIDC and SAML provider configuration with signed bearer sessions
-- fine-grained authorization tuples for record-level access control
-- database-backed Agent ID registry
-- audit logging for bootstrap, create/update, and deprovision actions
-- database schema revision tracking and in-place startup migrations
-- in-memory request rate limiting and request ID logging
-- SQLite for local development and `DATABASE_URL` support for Postgres deployments
+Admin API key only:
 
-## Current State
+- `GET /v1/api-keys`
+- `POST /v1/api-keys`
+- `POST /v1/api-keys/{api_key_id}/revoke`
+- `POST /v1/identity-providers/oidc`
+- `POST /v1/identity-providers/saml`
 
-- working FastAPI control plane with tenant bootstrap, admin UI, API keys, SSO, SAML, and record-level FGA
-- persistent storage for organizations, keys, records, audit events, identity providers, sessions, and authorization tuples
-- Docker, Compose, container publishing, and passing automated tests
-- appropriate as a serious MVP and reference SaaS foundation, not yet a fully hardened enterprise identity platform
+Interactive OpenAPI documentation is available from FastAPI at:
 
-## Current Limitations
-
-- OIDC is implemented as trusted callback-based session issuance, not full external authorization-code exchange and JWKS validation
-- SAML assertion ingestion exists, but certificate validation, signed metadata ingestion, and full SP hardening are not complete
-- FGA is internal and minimal; it is not OpenFGA-compatible and does not yet support groups, inheritance, or model versioning
-- admin UI does not yet manage identity providers, sessions, or FGA tuples
-- no SCIM, MFA, invitations, user directory, approval workflows, or policy administration UX
-- no Redis-backed rate limiting, background workers, secret encryption at rest, or production observability stack
-
-## Future Plan
-
-1. Harden identity flows with real OIDC code exchange, token validation, SAML signature validation, logout, and session revocation.
-2. Expand authorization with group mapping, policy templates, inheritance, and an OpenFGA-compatible model.
-3. Add enterprise lifecycle features including SCIM, approvals, audit export, key rotation workflows, and stronger secret handling.
-4. Improve platform operations with Alembic, Redis, workers, metrics, tracing, and deployment manifests.
-5. Build the missing admin UX for IdP configuration, tuple management, sessions, teams, and tenant settings.
-
-## Published Images
-
-- Docker Hub: `autonomyx/agent-identity:latest`
-- GHCR: `ghcr.io/didoneworld/agent-identity:latest`
-
-## CI/CD
-
-GitHub Actions is configured to:
-- run tests on every pull request
-- build and smoke test the container on pull requests
-- publish `latest`, branch, tag, and SHA-based image tags on `main` pushes and `v*` tags
-- push to both `ghcr.io/didoneworld/agent-identity` and `autonomyx/agent-identity`
-
-Required GitHub repository secrets for Docker Hub publishing:
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
-
-GHCR publishing uses the workflow `GITHUB_TOKEN` with package write permission.
-
-Run locally:
-
-```bash
-python3 -m uvicorn app.main:app --reload
+```text
+http://127.0.0.1:8000/docs
 ```
 
-Open the UI at:
+## Identity model
 
-```bash
-http://127.0.0.1:8000/
-```
+Agent DID separates identity, authorization, and governance:
 
-Bootstrap the first organization:
+- DIDs identify agents.
+- Authorization metadata describes whether agents act autonomously or on behalf of users, teams, or systems.
+- Governance metadata exposes lifecycle, audit, approval, and deprovisioning controls for long-running agents.
 
-```bash
-curl -X POST http://127.0.0.1:8000/v1/bootstrap \
-  -H 'content-type: application/json' \
-  -d '{"organization_name":"Didone World","organization_slug":"didoneworld","api_key_label":"ops-admin"}'
-```
-
-## Container
-
-The repository includes a runnable API image:
-
-```bash
-docker build -t agent-identity:local .
-docker run --rm -p 8000:8000 agent-identity:local
-```
-
-Or pull a published image directly:
-
-```bash
-docker run --rm -p 8000:8000 autonomyx/agent-identity:latest
-```
-
-The image starts the FastAPI service and serves the admin console at `/`. To run validation tests in the container instead:
-
-```bash
-docker run --rm agent-identity:local /app/scripts/validate.sh
-```
-
-For a full local product stack with Postgres:
-
-```bash
-docker compose up --build
-```
-
-The compose stack brings up:
-- `app` on `http://127.0.0.1:8000`
-- `db` on `postgresql://agentid:agentid@127.0.0.1:5432/agentid`
-
-If those host ports are already taken:
-
-```bash
-APP_PORT=8012 POSTGRES_PORT=5433 docker compose up --build
-```
-
-Environment template:
-
-```bash
-cp .env.example .env
-```
-
-## Identity Foundation
-
-The protocol uses W3C DID as the identity foundation.
-
-## Security Model
-
-The protocol now treats agent identity, delegated authority, and governance as separate concerns:
-- DIDs identify the agent.
-- Authorization metadata describes whether the agent acts autonomously or on behalf of users or teams.
-- Governance metadata exposes lifecycle, audit, and deprovisioning controls needed for long-running agents.
-
-## Recommended DID Methods
+Recommended DID methods:
 
 - `did:web` for public organization-managed agent identities
 - `did:key` for local, ephemeral, or lightweight agent identities
 
-## Example DID Methods
+Examples:
 
-- `examples/did-methods/did-web-agent.yaml` for organization-managed public identities
-- `examples/did-methods/did-key-agent.yaml` for local or ephemeral identities
+- `examples/did-methods/did-web-agent.yaml`
+- `examples/did-methods/did-key-agent.yaml`
+
+## Current limitations
+
+Agent DID is a serious MVP and reference SaaS foundation, not a fully hardened enterprise identity platform.
+
+Known limitations include:
+
+- external OIDC and SAML production hardening is still evolving
+- SAML metadata ingestion, certificate validation, logout, and full SP hardening are not complete
+- internal FGA is intentionally minimal and is not OpenFGA-compatible yet
+- admin UI does not yet expose every API capability
+- SCIM, SSF, approvals, and lifecycle automation are early product slices
+- Redis-backed rate limiting, background workers, production observability, and secret encryption at rest are not yet included
+
+## Roadmap
+
+Planned work includes:
+
+1. Harden OIDC and SAML flows with full token validation, signed metadata, logout, and session revocation.
+2. Expand authorization with group mapping, inheritance, policy templates, and an OpenFGA-compatible model.
+3. Mature SCIM, SSF, approvals, audit export, key rotation, and lifecycle automation.
+4. Improve operations with Alembic, Redis, workers, metrics, tracing, and deployment manifests.
+5. Expand the admin console for identity providers, sessions, FGA tuples, teams, tenant settings, and approvals.
+
+## CI/CD
+
+GitHub Actions is configured to:
+
+- run tests on pull requests
+- build and smoke test the container on pull requests
+- publish `latest`, branch, tag, and SHA-based image tags on `main` pushes and `v*` tags
+- push images to GHCR and Docker Hub
+
+Required GitHub repository secrets for Docker Hub publishing:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+GHCR publishing uses `GITHUB_TOKEN` with package write permission.
+
+## License
+
+Add license information here before using Agent DID in production or redistributing packaged builds.
