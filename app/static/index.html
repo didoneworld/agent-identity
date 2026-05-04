@@ -92,26 +92,44 @@
           </section>
         </section>
 
-        <section class="panel-grid wide">
+
+        <section class="panel-grid wide" id="lifecycle-dashboard">
           <section class="panel highlight">
             <div class="panel-head">
-              <h3>Blueprint List</h3>
-              <p>Reusable Agent Identity Blueprints, owners, sponsors, credentials, required resource access, inheritable permissions, child agent identities, and audit events.</p>
+              <h3>Lifecycle Dashboard</h3>
+              <p>Agent lifecycle detail, blueprint lifecycle detail, pending reviews, renewal queue, credential rotation queue, deprovisioning jobs, quarantine queue, and risk findings.</p>
             </div>
-            <div id="blueprints-empty" class="empty">No blueprints loaded yet.</div>
-            <div id="blueprints-list" class="record-list"></div>
+            <div class="mini-grid lifecycle-nav">
+              <button data-lifecycle-page="agent-detail">Agent lifecycle detail</button>
+              <button data-lifecycle-page="blueprint-detail">Blueprint lifecycle detail</button>
+              <button data-lifecycle-page="pending-reviews">Pending reviews</button>
+              <button data-lifecycle-page="renewal-queue">Renewal queue</button>
+              <button data-lifecycle-page="credential-rotation">Credential rotation queue</button>
+              <button data-lifecycle-page="deprovisioning-jobs">Deprovisioning jobs</button>
+              <button data-lifecycle-page="quarantine-queue">Quarantine queue</button>
+              <button data-lifecycle-page="risk-findings">Risk findings</button>
+              <button data-lifecycle-page="audit-timeline">Audit timeline</button>
+              <button data-lifecycle-page="policy-configuration">Policy configuration</button>
+              <button data-lifecycle-page="webhook-delivery-logs">Webhook delivery logs</button>
+            </div>
+            <div id="lifecycle-summary" class="audit-list"></div>
           </section>
 
-          <section class="panel highlight">
+          <section class="panel">
             <div class="panel-head">
-              <h3>Create Blueprint</h3>
-              <p>Create blueprint detail pages for credentials, permissions, sponsors and owners.</p>
+              <h3>Lifecycle Policy Configuration</h3>
+              <p>Safe defaults: approvals, sponsor/owner requirements, credential rotation, renewal, and auto-quarantine controls.</p>
             </div>
-            <form id="blueprint-form" class="stack">
-              <textarea name="blueprint_json" rows="18"></textarea>
-              <button type="submit">Create blueprint</button>
-            </form>
-            <pre id="blueprint-result" class="result"></pre>
+            <pre class="result">max_agent_lifetime_days: 365
+inactivity_suspend_days: 90
+credential_rotation_days: 90
+renewal_window_days: 30
+approval_required: true
+two_person_approval_required: false
+sponsor_required: true
+owner_required: true
+production_hardening_required: true</pre>
+
           </section>
         </section>
 

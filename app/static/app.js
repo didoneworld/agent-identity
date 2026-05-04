@@ -403,3 +403,31 @@ els.sessionForm.api_key.value = state.apiKey;
 if (state.apiKey) {
   refreshAuthedData().catch((error) => setResult(els.sessionResult, String(error)));
 }
+
+function renderLifecycleDashboard() {
+  const target = document.getElementById("lifecycle-summary");
+  if (!target) return;
+  const records = state.records || [];
+  const counts = records.reduce((acc, item) => {
+    const stateName = item.lifecycle_state || (item.status === "disabled" ? "suspended" : "active");
+    acc[stateName] = (acc[stateName] || 0) + 1;
+    return acc;
+  }, {});
+  const queues = [
+    ["Pending reviews", counts.pending_review || 0],
+    ["Renewal queue", counts.pending_renewal || 0],
+    ["Credential rotation queue", counts.pending_rotation || 0],
+    ["Deprovisioning jobs", counts.deprovisioning || 0],
+    ["Quarantine queue", counts.quarantined || 0],
+    ["Risk findings", "policy-driven"],
+    ["Audit timeline", state.auditEvents.length],
+    ["Webhook delivery logs", "replay + DLQ"],
+  ];
+  target.innerHTML = queues.map(([label, value]) => `<div class="audit-card"><div class="audit-top"><strong>${label}</strong><span>${value}</span></div></div>`).join("");
+}
+
+const originalRenderRecords = renderRecords;
+renderRecords = function lifecycleAwareRenderRecords() {
+  originalRenderRecords();
+  renderLifecycleDashboard();
+};

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "blueprint_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "dry_run",
+        "running",
+        "completed",
+        "partial_failure",
+        "failed",
+        "rolled_back"
+      ]
+    },
+    "completed_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failed_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "retryable_failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "irreversible_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "audit_event_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

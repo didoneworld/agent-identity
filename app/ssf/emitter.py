@@ -38,8 +38,9 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, HTTPException, status
-from fastapi import Response
-from fastapi.responses import JSONResponse
+
+from fastapi.responses import JSONResponse, Response
+
 from pydantic import BaseModel
 
 ssf_router = APIRouter()

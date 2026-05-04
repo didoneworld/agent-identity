@@ -1,0 +1,20 @@
+{
+  "event_id": "evt-lifecycle-123",
+  "event_type": "agent.suspended",
+  "subject_type": "agent",
+  "subject_id": "agent-123",
+  "previous_state": "active",
+  "new_state": "suspended",
+  "actor_type": "user",
+  "actor_id": "api-key:platform-admin",
+  "requested_by": "secops@example.com",
+  "approved_by": "approver@example.com",
+  "reason": "inactive beyond policy threshold",
+  "ticket_id": "SEC-1234",
+  "policy_id": "policy-basic-lifecycle",
+  "correlation_id": "corr-123",
+  "idempotency_key": "idem-123",
+  "timestamp": "2026-05-04T00:00:00Z",
+  "evidence_hash": "sha256-example",
+  "metadata": { "dry_run": false }
+}

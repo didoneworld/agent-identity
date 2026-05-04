@@ -1,0 +1,14 @@
+{
+  "renewal_request_id": "renewal-123",
+  "subject_type": "agent",
+  "subject_id": "agent-123",
+  "requested_by": "owner@example.com",
+  "sponsor_attestation": { "attested_by": "sponsor@example.com", "valid_until": "2026-11-04T00:00:00Z" },
+  "owner_approval": { "approved_by": "owner@example.com", "approved_at": "2026-05-04T00:00:00Z" },
+  "policy_validation": { "passed": true },
+  "permission_review": { "expired_permissions_removed": true },
+  "credential_review": { "rotation_required": false },
+  "risk_review": { "score": 15, "critical_findings": 0 },
+  "new_expiration_date": "2026-11-04T00:00:00Z",
+  "status": "approved"
+}

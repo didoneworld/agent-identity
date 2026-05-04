@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "finding_id",
+    "severity",
+    "source",
+    "description",
+    "created_at",
+    "status"
+  ],
+  "properties": {
+    "finding_id": {
+      "type": "string"
+    },
+    "severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "acknowledged_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "remediated_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "open",
+        "acknowledged",
+        "remediated",
+        "accepted_risk"
+      ]
+    },
+    "linked_audit_events": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

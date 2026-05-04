@@ -7,6 +7,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 from app.database import Base
+import app.db_models  # noqa: F401 - register SQLAlchemy models before create_all
 
 
 LATEST_REVISION = "20260504_01"
@@ -92,7 +93,9 @@ def migrate_database(engine: Engine) -> str:
         ("20260427_01", _initial_schema),
         ("20260429_01", _api_key_role_upgrade),
         ("20260429_02", _sso_and_fga_upgrade),
-        ("20260504_01", _blueprint_alignment_upgrade),
+
+        ("20260504_01", _sso_and_fga_upgrade),
+
     ]
     _ensure_migrations_table(engine)
     for revision, revision_fn in revisions:

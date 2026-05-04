@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://didone.world/schemas/lifecycle-policy.schema.json",
+  "type": "object",
+  "required": [
+    "policy_id",
+    "name",
+    "rules"
+  ],
+  "properties": {
+    "policy_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "max_agent_lifetime_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "inactivity_suspend_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "credential_rotation_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "renewal_window_days": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "approval_required": {
+      "type": "boolean"
+    },
+    "two_person_approval_required": {
+      "type": "boolean"
+    },
+    "sponsor_required": {
+      "type": "boolean"
+    },
+    "owner_required": {
+      "type": "boolean"
+    },
+    "production_hardening_required": {
+      "type": "boolean"
+    },
+    "auto_deprovision_on_sponsor_removal": {
+      "type": "boolean"
+    },
+    "auto_suspend_on_policy_violation": {
+      "type": "boolean"
+    },
+    "auto_quarantine_on_critical_finding": {
+      "type": "boolean"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": true
+}

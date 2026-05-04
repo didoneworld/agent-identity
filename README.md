@@ -279,3 +279,22 @@ GHCR publishing uses `GITHUB_TOKEN` with package write permission.
 ## License
 
 Add license information here before using Agent DID in production or redistributing packaged builds.
+
+## Lifecycle Management
+
+Agent DID now includes explicit, policy-governed lifecycle management for Agent ID records and Agent Identity Blueprints. The lifecycle model is vendor-neutral and DID-first, with Microsoft Entra Agent ID blueprint alignment documented as an optional compatibility profile rather than a runtime dependency.
+
+Highlights:
+
+- Strict lifecycle states and transition validation for agents and blueprints.
+- Lifecycle APIs for review, approval, activation, suspension, resumption, quarantine, renewal, credential rotation, deprovisioning, archive, and delete.
+- Activation validation gates for DID documents, verification methods, credentials, permissions, sponsors, owners, governance endpoints, audit logging, production hardening, risk thresholds, and quarantine/revocation status.
+- Staged, idempotent, auditable deprovisioning with dry-run reports and blueprint child cascade support.
+- Lifecycle audit event queries, webhook event schemas, policy schemas, renewal/risk/quarantine models, and operational runbooks.
+- Backward-compatible migration semantics for records without lifecycle state: enabled records are treated as `active`, disabled records as `suspended`, and previously deprovisioned records as `archived`/`deprovisioned`.
+
+See [Lifecycle Management](docs/lifecycle-management.md) for state diagrams, policy configuration, workflows, APIs, examples, and migration guidance.
+
+### SDKs
+
+A Python SDK is available in [`sdk/python`](sdk/python/README.md) for adopters who want to integrate Agent DID lifecycle operations into their own portals, workers, CI/CD automations, or identity governance systems. It supports API-key, bearer-token, and dynamic auth-provider adapters while keeping Agent DID lifecycle operations vendor-neutral.

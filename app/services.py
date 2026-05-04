@@ -35,6 +35,7 @@ from app.db_models import (
 )
 from app.schemas import AgentIdentityBlueprintPatch, AgentIdentityBlueprintWrite, AgentRecordWrite, AuthContext, BlueprintCredentialWrite, BlueprintPrincipalWrite
 from app.security import create_session_token, generate_api_key, hash_api_key, verify_session_token
+from app.lifecycle import LifecycleServiceMixin
 
 
 class ProtocolValidationError(Exception):
@@ -64,7 +65,7 @@ def _as_utc(value):
     return value
 
 
-class SaaSService:
+class SaaSService(LifecycleServiceMixin):
     def __init__(self, schema_path: Path) -> None:
         schema = json.loads(schema_path.read_text())
         self.validator = Draft202012Validator(schema)
