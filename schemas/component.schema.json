@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/didoneworld/agent-did/schemas/component.schema.json",
+  "title": "Agent DID Component Manifest",
+  "description": "Machine-readable metadata for a protocol, service, router, SDK, schema, or operational component in Agent DID.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "description",
+    "status",
+    "kind",
+    "owner",
+    "entrypoints",
+    "interfaces",
+    "dependencies",
+    "security",
+    "operations"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "id": {
+      "type": "string",
+      "description": "Stable lowercase component id. Should match the component folder name when a folder exists.",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,100}[a-z0-9]$"
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 140 },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:[-+][0-9A-Za-z.-]+)?$|^\\d{4}\\.\\d{1,2}\\.\\d{1,2}(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "description": { "type": "string", "minLength": 20, "maxLength": 1000 },
+    "status": { "type": "string", "enum": ["planned", "experimental", "active", "maintenance", "deprecated"] },
+    "kind": {
+      "type": "string",
+      "enum": ["protocol", "service", "router", "schema", "sdk", "ui", "workflow", "operation", "example", "other"]
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["team"],
+      "properties": {
+        "team": { "type": "string", "minLength": 1 },
+        "github": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      }
+    },
+    "categories": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "agent-identity",
+          "did",
+          "oidc",
+          "saml",
+          "scim",
+          "ssf",
+          "authorization",
+          "audit",
+          "lifecycle",
+          "blueprints",
+          "admin-console",
+          "sdk",
+          "schemas",
+          "operations"
+        ]
+      },
+      "default": []
+    },
+    "entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primary"],
+      "properties": {
+        "primary": { "type": "string" },
+        "readme": { "type": "string" },
+        "docs": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "tests": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "schemas": { "type": "array", "items": { "type": "string" }, "default": [] }
+      }
+    },
+    "interfaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rest": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "graphql": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "grpc": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "events": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "schemas": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "protocols": { "type": "array", "items": { "type": "string" }, "default": [] }
+      },
+      "default": {}
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "name"],
+        "properties": {
+          "type": { "type": "string", "enum": ["component", "database", "api", "identity-provider", "protocol", "package", "service", "other"] },
+          "name": { "type": "string" },
+          "required": { "type": "boolean", "default": true },
+          "notes": { "type": "string" }
+        }
+      },
+      "default": []
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataClassification", "authRequired", "secrets"],
+      "properties": {
+        "dataClassification": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] },
+        "authRequired": { "type": "boolean" },
+        "roles": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "secrets": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,100}$" } },
+        "notes": { "type": "string", "maxLength": 1500 }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "health": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "metrics": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "runbooks": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "migrations": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "notes": { "type": "string", "maxLength": 1500 }
+      },
+      "default": {}
+    }
+  }
+}
