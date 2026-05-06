@@ -124,6 +124,26 @@ Published images:
 - Docker Hub: `autonomyx/agent-identity:latest`
 - GHCR: `ghcr.io/didoneworld/agent-identity:latest`
 
+### Publish to Docker Hub
+
+This repository includes a GitHub Actions workflow that builds the image for `linux/amd64` and `linux/arm64`, then pushes it to Docker Hub. Configure these repository secrets before running the workflow:
+
+- `DOCKERHUB_USERNAME`: Docker Hub username with access to the target repository
+- `DOCKERHUB_TOKEN`: Docker Hub access token or password
+
+Publish options:
+
+```bash
+# Publish from GitHub Actions manually:
+# Actions > Publish Docker image > Run workflow
+
+# Publish a semantic version tag from the command line:
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The manual workflow input defaults to `autonomyx/agent-identity`, and successful runs also publish `latest` unless `push_latest` is disabled.
+
 ## Run with Docker Compose
 
 Start the app with Postgres:
